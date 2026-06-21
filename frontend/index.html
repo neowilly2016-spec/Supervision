@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Backbone & MBH Monitoring - Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <h1>🔍 Backbone & MBH Monitoring</h1>
+            <span class="version">v1.0</span>
+        </div>
+        <div class="header-right">
+            <div class="status-indicator">
+                <span class="status-dot online"></span>
+                <span>Collector: Online</span>
+            </div>
+            <div class="last-update">
+                <span id="last-update">Last update: --</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <nav>
+                <ul class="nav-menu">
+                    <li class="nav-item active" data-view="dashboard">
+                        <span class="icon">📊</span>
+                        <span>Dashboard</span>
+                    </li>
+                    <li class="nav-item" data-view="topology">
+                        <span class="icon">🗺️</span>
+                        <span>Topologie</span>
+                    </li>
+                    <li class="nav-item" data-view="devices">
+                        <span class="icon">📡</span>
+                        <span>Équipements</span>
+                    </li>
+                    <li class="nav-item" data-view="bgp">
+                        <span class="icon">🔀</span>
+                        <span>BGP Sessions</span>
+                    </li>
+                    <li class="nav-item" data-view="mpls">
+                        <span class="icon">⚡</span>
+                        <span>MPLS Tunnels</span>
+                    </li>
+                    <li class="nav-item" data-view="mbh">
+                        <span class="icon">📶</span>
+                        <span>MBH Links</span>
+                    </li>
+                    <li class="nav-item" data-view="alerts">
+                        <span class="icon">🚨</span>
+                        <span>Alertes</span>
+                        <span class="badge" id="alerts-count">0</span>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Dashboard View (Default) -->
+            <div id="dashboard-view" class="view active">
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon devices">📡</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Équipements</div>
+                            <div class="stat-value" id="total-devices">--</div>
+                            <div class="stat-detail">
+                                <span class="status-up" id="devices-up">--</span> UP /
+                                <span class="status-down" id="devices-down">--</span> DOWN
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon bgp">🔀</div>
+                        <div class="stat-content">
+                            <div class="stat-label">BGP Sessions</div>
+                            <div class="stat-value" id="total-bgp">--</div>
+                            <div class="stat-detail">
+                                <span class="status-up" id="bgp-established">--</span> Established /
+                                <span class="status-down" id="bgp-down">--</span> Down
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon mpls">⚡</div>
+                        <div class="stat-content">
+                            <div class="stat-label">MPLS LSPs</div>
+                            <div class="stat-value" id="total-mpls">--</div>
+                            <div class="stat-detail">
+                                <span class="status-up" id="mpls-up">--</span> UP /
+                                <span class="status-down" id="mpls-down">--</span> DOWN
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon alerts">🚨</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Alertes Actives</div>
+                            <div class="stat-value critical" id="total-alerts">--</div>
+                            <div class="stat-detail">
+                                <span class="severity-critical" id="alerts-critical">--</span> Critical /
+                                <span class="severity-major" id="alerts-major">--</span> Major
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="charts-row">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Bandwidth Utilization (Top 10)</h3>
+                        </div>
+                        <canvas id="bandwidth-chart"></canvas>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Répartition équipements</h3>
+                        </div>
+                        <canvas id="devices-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Alerts -->
+                <div class="alerts-panel">
+                    <div class="panel-header">
+                        <h3>🚨 Alertes Récentes</h3>
+                        <button class="btn-refresh" onclick="loadAlerts()">Actualiser</button>
+                    </div>
+                    <div id="recent-alerts" class="alerts-list">
+                        <!-- Alerts will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Topology View -->
+            <div id="topology-view" class="view">
+                <div class="topology-controls">
+                    <button class="btn" onclick="resetTopologyZoom()">Reset Zoom</button>
+                    <button class="btn" onclick="refreshTopology()">Refresh</button>
+                    <label>
+                        <input type="checkbox" id="show-labels" checked> Afficher noms
+                    </label>
+                </div>
+                <div id="network-topology" class="topology-canvas">
+                    <!-- D3.js network graph -->
+                </div>
+            </div>
+
+            <!-- Devices View -->
+            <div id="devices-view" class="view">
+                <div class="table-header">
+                    <h2>📡 Équipements</h2>
+                    <input type="text" id="device-search" placeholder="Rechercher un équipement..." class="search-input">
+                </div>
+                <div id="devices-table" class="data-table">
+                    <!-- Table will be loaded here -->
+                </div>
+            </div>
+
+            <!-- BGP View -->
+            <div id="bgp-view" class="view">
+                <div class="table-header">
+                    <h2>🔀 BGP Sessions</h2>
+                    <select id="bgp-filter" class="filter-select">
+                        <option value="all">Toutes</option>
+                        <option value="established">Established</option>
+                        <option value="down">Down</option>
+                    </select>
+                </div>
+                <div id="bgp-table" class="data-table">
+                    <!-- BGP table -->
+                </div>
+            </div>
+
+            <!-- MPLS View -->
+            <div id="mpls-view" class="view">
+                <div class="table-header">
+                    <h2>⚡ MPLS Tunnels</h2>
+                </div>
+                <div id="mpls-table" class="data-table">
+                    <!-- MPLS table -->
+                </div>
+            </div>
+
+            <!-- MBH View -->
+            <div id="mbh-view" class="view">
+                <div class="table-header">
+                    <h2>📶 Mobile Backhaul Links</h2>
+                </div>
+                <div id="mbh-table" class="data-table">
+                    <!-- MBH links table -->
+                </div>
+            </div>
+
+            <!-- Alerts View -->
+            <div id="alerts-view" class="view">
+                <div class="table-header">
+                    <h2>🚨 Alertes</h2>
+                    <select id="alert-severity-filter" class="filter-select">
+                        <option value="all">Toutes</option>
+                        <option value="critical">Critical</option>
+                        <option value="major">Major</option>
+                        <option value="minor">Minor</option>
+                    </select>
+                </div>
+                <div id="alerts-table" class="data-table">
+                    <!-- Alerts table -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/dashboard.js"></script>
+    <script src="js/topology.js"></script>
+    <script src="js/alerts.js"></script>
+</body>
+</html>
