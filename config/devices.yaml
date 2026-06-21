@@ -139,7 +139,6 @@ devices:
     tags: [mbh, aggregation, alger]
 
   - hostname: HW-ORAN-AGG1
-    ip: 10.10.2.1  # Wilaya 31 (Oran)
     loopback: 10.44.31.1
     zone: MBH-Zone2
     type: switch
@@ -160,7 +159,6 @@ devices:
   # ---- MBH - Liens Microwave ----
   - hostname: MW-ALGER-SITE001
     ip: 10.20.1.1
-    loopback: 10.200.16.1  # Zone 1 - Wilaya 16 (Alger)
     zone: MBH-Zone1
     type: microwave
     vendor: ericsson
