@@ -1,0 +1,196 @@
+# ============================================================
+# Inventaire des equipements reseau
+# Backbone (Juniper MX) + MBH (Huawei NE9000 / Microwave)
+# ============================================================
+
+devices:
+
+  # ---- BACKBONE - Routeurs Juniper MX ----
+  - hostname: MX-ALGER-PE1
+    ip: 192.168.1.1
+    type: router
+    vendor: juniper
+    model: MX480
+    role: PE
+    site: Alger
+    region: Centre
+    snmp:
+      version: 2c
+      community: public
+    protocols:
+      bgp: true
+      isis: true
+      mpls: true
+      ldp: true
+      rsvp: true
+    tags: [backbone, pe, alger]
+
+  - hostname: MX-ALGER-PE2
+    ip: 192.168.1.2
+    type: router
+    vendor: juniper
+    model: MX480
+    role: PE
+    site: Alger
+    region: Centre
+    snmp:
+      version: 2c
+      community: public
+    protocols:
+      bgp: true
+      isis: true
+      mpls: true
+      ldp: true
+      rsvp: true
+    tags: [backbone, pe, alger]
+
+  - hostname: MX-ORAN-PE1
+    ip: 192.168.2.1
+    type: router
+    vendor: juniper
+    model: MX240
+    role: PE
+    site: Oran
+    region: Ouest
+    snmp:
+      version: 2c
+      community: public
+    protocols:
+      bgp: true
+      isis: true
+      mpls: true
+      ldp: true
+      rsvp: true
+    tags: [backbone, pe, oran]
+
+  - hostname: MX-CONSTANTINE-PE1
+    ip: 192.168.3.1
+    type: router
+    vendor: juniper
+    model: MX240
+    role: PE
+    site: Constantine
+    region: Est
+    snmp:
+      version: 2c
+      community: public
+    protocols:
+      bgp: true
+      isis: true
+      mpls: true
+    tags: [backbone, pe, constantine]
+
+  # ---- BACKBONE - Routeurs Huawei NE9000 ----
+  - hostname: NE9K-ALGER-P1
+    ip: 192.168.1.10
+    type: router
+    vendor: huawei
+    model: NE9000
+    role: P
+    site: Alger
+    region: Centre
+    snmp:
+      version: 2c
+      community: public
+    protocols:
+      bgp: true
+      isis: true
+      mpls: true
+      ldp: true
+      rsvp: true
+      sr: true
+    tags: [backbone, p, alger]
+
+  - hostname: NE9K-ALGER-P2
+    ip: 192.168.1.11
+    type: router
+    vendor: huawei
+    model: NE9000
+    role: P
+    site: Alger
+    region: Centre
+    snmp:
+      version: 2c
+      community: public
+    protocols:
+      bgp: true
+      isis: true
+      mpls: true
+      ldp: true
+      rsvp: true
+      sr: true
+    tags: [backbone, p, alger]
+
+  # ---- MBH - Aggregation Huawei ----
+  - hostname: HW-ALGER-AGG1
+    ip: 10.10.1.1
+    type: switch
+    vendor: huawei
+    model: CE6870
+    role: MBH-AGG
+    site: Alger
+    region: Centre
+    snmp:
+      version: 2c
+      community: public
+    protocols:
+      bgp: false
+      isis: true
+      mpls: true
+    tags: [mbh, aggregation, alger]
+
+  - hostname: HW-ORAN-AGG1
+    ip: 10.10.2.1
+    type: switch
+    vendor: huawei
+    model: CE6870
+    role: MBH-AGG
+    site: Oran
+    region: Ouest
+    snmp:
+      version: 2c
+      community: public
+    protocols:
+      bgp: false
+      isis: true
+      mpls: true
+    tags: [mbh, aggregation, oran]
+
+  # ---- MBH - Liens Microwave ----
+  - hostname: MW-ALGER-SITE001
+    ip: 10.20.1.1
+    type: microwave
+    vendor: ericsson
+    model: MINI-LINK
+    role: MBH-MW
+    site: Alger-Site001
+    region: Centre
+    snmp:
+      version: 2c
+      community: public
+    mbh_params:
+      frequency_ghz: 18
+      modulation: 256QAM
+      capacity_mbps: 400
+      far_end_ip: 10.20.1.2
+      far_end_hostname: MW-ALGER-SITE001-FAR
+    tags: [mbh, microwave, alger]
+
+  - hostname: MW-ALGER-SITE002
+    ip: 10.20.2.1
+    type: microwave
+    vendor: huawei
+    model: OptiX-RTN-950A
+    role: MBH-MW
+    site: Alger-Site002
+    region: Centre
+    snmp:
+      version: 2c
+      community: public
+    mbh_params:
+      frequency_ghz: 23
+      modulation: 128QAM
+      capacity_mbps: 200
+      far_end_ip: 10.20.2.2
+      far_end_hostname: MW-ALGER-SITE002-FAR
+    tags: [mbh, microwave, alger]
