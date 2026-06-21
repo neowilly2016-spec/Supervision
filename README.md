@@ -72,6 +72,8 @@ Cette solution complète de monitoring réseau est conçue pour superviser:
 │ - Juniper MX480/MX240 (PE/P)     │
 │ - Huawei NE9000 (P/PE)           │
 │ - Huawei CE6870 (MBH AGG)        │
+| - MBH Zone 1 (Juniper)     | Loopback: 10.200.x.y (x=wilaya)           |
+| - MBH Zone 2 (Huawei)      | Loopback: 10.44.x.y (x=wilaya)            |
 │ - Ericsson MINI-LINK (MW)        │
 │ - Huawei RTN-950A (MW)           │
 └──────────────────────────────────┘
