@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+
+  # PostgreSQL + TimescaleDB
+  db:
+    image: timescale/timescaledb:latest-pg15
+    container_name: supervision_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-supervision}
+      POSTGRES_USER: ${POSTGRES_USER:-supervision}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-supervision123}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - supervision_net
+
+  # Redis (cache & message broker)
+  redis:
+    image: redis:7-alpine
+    container_name: supervision_redis
+    restart: unless-stopped
+    networks:
+      - supervision_net
+
+  # Collecteur SNMP / topology / BGP / MPLS / MBH
+  collector:
+    build: ./collector
+    container_name: supervision_collector
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./config:/app/config:ro
+      - ./collector:/app
+    depends_on:
+      - db
+      - redis
+    networks:
+      - supervision_net
+
+  # API Flask
+  api:
+    build: ./api
+    container_name: supervision_api
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "5000:5000"
+    depends_on:
+      - db
+      - redis
+    networks:
+      - supervision_net
+
+  # Frontend Nginx
+  frontend:
+    build: ./frontend
+    container_name: supervision_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    networks:
+      - supervision_net
+
+  # Grafana (dashboards optionnels)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: supervision_grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin123}
+      GF_SERVER_ROOT_URL: http://localhost:3000
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    networks:
+      - supervision_net
+
+volumes:
+  postgres_data:
+  grafana_data:
+
+networks:
+  supervision_net:
+    driver: bridge
