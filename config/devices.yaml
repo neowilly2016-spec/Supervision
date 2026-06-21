@@ -1,7 +1,6 @@
 # ============================================================
 # Inventaire des equipements reseau
-# Backbone (Juniper MX) + MBH (Huawei NE9000 / Microwave)
-# ============================================================
+# Backbone (Juniper MX) + MBH Zone 1 (Juniper) + MBH Zone 2 (Huawei NE9000 / Microwave)# ============================================================
 
 devices:
 
@@ -123,8 +122,8 @@ devices:
 
   # ---- MBH - Aggregation Huawei ----
   - hostname: HW-ALGER-AGG1
-    ip: 10.10.1.1
-    type: switch
+    type: switch    loopback: 10.44.16.1
+    zone: MBH-Zone2
     vendor: huawei
     model: CE6870
     role: MBH-AGG
@@ -140,7 +139,9 @@ devices:
     tags: [mbh, aggregation, alger]
 
   - hostname: HW-ORAN-AGG1
-    ip: 10.10.2.1
+    ip: 10.10.2.1  # Wilaya 31 (Oran)
+    loopback: 10.44.31.1
+    zone: MBH-Zone2
     type: switch
     vendor: huawei
     model: CE6870
@@ -159,6 +160,8 @@ devices:
   # ---- MBH - Liens Microwave ----
   - hostname: MW-ALGER-SITE001
     ip: 10.20.1.1
+    loopback: 10.200.16.1  # Zone 1 - Wilaya 16 (Alger)
+    zone: MBH-Zone1
     type: microwave
     vendor: ericsson
     model: MINI-LINK
@@ -178,6 +181,8 @@ devices:
 
   - hostname: MW-ALGER-SITE002
     ip: 10.20.2.1
+    loopback: 10.200.16.2  # Zone 1 - Wilaya 16 (Alger)
+    zone: MBH-Zone1
     type: microwave
     vendor: huawei
     model: OptiX-RTN-950A
