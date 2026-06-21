@@ -131,8 +131,7 @@ devices:
     region: Centre
     snmp:
       version: 2c
-      community: public
-    protocols:
+    protocols:      community: mobilis-read-only
       bgp: false
       isis: true
       mpls: true
@@ -149,11 +148,9 @@ devices:
     region: Ouest
     snmp:
       version: 2c
-      community: public
-    protocols:
-      bgp: false
-      isis: true
       mpls: true
+      community: mobilis-read-only
+    protocols:
     tags: [mbh, aggregation, oran]
 
   # ---- MBH - Liens Microwave ----
@@ -168,8 +165,7 @@ devices:
     region: Centre
     snmp:
       version: 2c
-      community: public
-    mbh_params:
+    mbh_params:      community: mpbn
       frequency_ghz: 18
       modulation: 256QAM
       capacity_mbps: 400
