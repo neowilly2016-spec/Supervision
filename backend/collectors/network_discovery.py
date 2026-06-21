@@ -45,12 +45,6 @@ class NetworkDiscovery:
                 'zone': 'MBH-Zone2',
                 'vendor_hint': 'huawei'
             },
-            {
-                'network': '192.168.0.0/16', # Backbone
-                'community': 'public',
-                'zone': 'Backbone',
-                'vendor_hint': None
-            }
         ]
     
     def snmp_get(self, ip, community, oid):
