@@ -1,0 +1,158 @@
+# ============================================================
+# Profils SNMP OIDs par vendor et type d'equipement
+# ============================================================
+
+profiles:
+
+  # ---- Juniper MX Series ----
+  juniper_mx:
+    vendor: juniper
+    models: [MX80, MX104, MX240, MX480, MX960, MX2010, MX2020]
+    oids:
+      system:
+        sysDescr: 1.3.6.1.2.1.1.1.0
+        sysUpTime: 1.3.6.1.2.1.1.3.0
+        sysName: 1.3.6.1.2.1.1.5.0
+      interfaces:
+        ifTable: 1.3.6.1.2.1.2.2
+        ifXTable: 1.3.6.1.2.1.31.1.1
+        ifDescr: 1.3.6.1.2.1.2.2.1.2
+        ifOperStatus: 1.3.6.1.2.1.2.2.1.8
+        ifAdminStatus: 1.3.6.1.2.1.2.2.1.7
+        ifInOctets: 1.3.6.1.2.1.2.2.1.10
+        ifOutOctets: 1.3.6.1.2.1.2.2.1.16
+        ifInErrors: 1.3.6.1.2.1.2.2.1.14
+        ifOutErrors: 1.3.6.1.2.1.2.2.1.20
+        ifHCInOctets: 1.3.6.1.2.1.31.1.1.1.6
+        ifHCOutOctets: 1.3.6.1.2.1.31.1.1.1.10
+        ifHighSpeed: 1.3.6.1.2.1.31.1.1.1.15
+      bgp:
+        bgpPeerTable: 1.3.6.1.2.1.15.3
+        bgpPeerState: 1.3.6.1.2.1.15.3.1.2
+        bgpPeerAdminStatus: 1.3.6.1.2.1.15.3.1.3
+        bgpPeerRemoteAs: 1.3.6.1.2.1.15.3.1.9
+        bgpPeerInUpdates: 1.3.6.1.2.1.15.3.1.10
+        bgpPeerOutUpdates: 1.3.6.1.2.1.15.3.1.11
+        bgpPeerFsmEstablishedTime: 1.3.6.1.2.1.15.3.1.16
+        # Juniper BGP4-V2
+        jnxBgpM2PeerState: 1.3.6.1.4.1.2636.5.1.1.2.1.1.1.2
+      mpls:
+        mplsLspInfoTable: 1.3.6.1.4.1.2636.3.2.3
+        mplsLspState: 1.3.6.1.4.1.2636.3.2.3.1.6
+        mplsLspOctets: 1.3.6.1.4.1.2636.3.2.3.1.8
+        mplsLspTransitions: 1.3.6.1.4.1.2636.3.2.3.1.10
+        # MPLS-TE MIB standard
+        mplsTeTable: 1.3.6.1.2.1.10.166.3
+      isis:
+        isisCircTable: 1.3.6.1.2.1.138.1.6.1
+        isisAdjState: 1.3.6.1.2.1.138.1.6.1.1.7
+      lldp:
+        lldpRemTable: 1.0.8802.1.1.2.1.4.1
+        lldpRemPortId: 1.0.8802.1.1.2.1.4.1.1.7
+        lldpRemSysName: 1.0.8802.1.1.2.1.4.1.1.9
+      cpu:
+        jnxOperatingCPU: 1.3.6.1.4.1.2636.3.1.13.1.8
+        jnxOperatingTemp: 1.3.6.1.4.1.2636.3.1.13.1.7
+      memory:
+        jnxOperatingBuffer: 1.3.6.1.4.1.2636.3.1.13.1.11
+
+  # ---- Huawei NE9000 / Router Series ----
+  huawei_ne:
+    vendor: huawei
+    models: [NE40E, NE80E, NE9000, CX600]
+    oids:
+      system:
+        sysDescr: 1.3.6.1.2.1.1.1.0
+        sysUpTime: 1.3.6.1.2.1.1.3.0
+        sysName: 1.3.6.1.2.1.1.5.0
+      interfaces:
+        ifTable: 1.3.6.1.2.1.2.2
+        ifXTable: 1.3.6.1.2.1.31.1.1
+        ifHCInOctets: 1.3.6.1.2.1.31.1.1.1.6
+        ifHCOutOctets: 1.3.6.1.2.1.31.1.1.1.10
+        ifHighSpeed: 1.3.6.1.2.1.31.1.1.1.15
+        ifOperStatus: 1.3.6.1.2.1.2.2.1.8
+      bgp:
+        bgpPeerTable: 1.3.6.1.2.1.15.3
+        bgpPeerState: 1.3.6.1.2.1.15.3.1.2
+        # Huawei BGP extended
+        hwBgpPeerTable: 1.3.6.1.4.1.2011.5.25.177.1.1.3
+        hwBgpPeerState: 1.3.6.1.4.1.2011.5.25.177.1.1.3.1.4
+        hwBgpPeerAdminStatus: 1.3.6.1.4.1.2011.5.25.177.1.1.3.1.3
+      mpls:
+        # Huawei MPLS MIB
+        hwMplsTunnelTable: 1.3.6.1.4.1.2011.5.25.119.2.1.5
+        hwMplsTunnelState: 1.3.6.1.4.1.2011.5.25.119.2.1.5.1.4
+        hwMplsTunnelBandwidth: 1.3.6.1.4.1.2011.5.25.119.2.1.5.1.8
+      isis:
+        isisCircTable: 1.3.6.1.2.1.138.1.6.1
+        hwIsisNbrTable: 1.3.6.1.4.1.2011.5.25.153.1.8.1
+      lldp:
+        lldpRemTable: 1.0.8802.1.1.2.1.4.1
+        lldpRemSysName: 1.0.8802.1.1.2.1.4.1.1.9
+      cpu:
+        hwEntityCpuUsage: 1.3.6.1.4.1.2011.5.25.31.1.1.1.1.5
+      memory:
+        hwEntityMemUsage: 1.3.6.1.4.1.2011.5.25.31.1.1.1.1.7
+
+  # ---- MBH - Huawei OptiX RTN Microwave ----
+  huawei_rtn:
+    vendor: huawei
+    models: [RTN-950A, RTN-905, RTN-910, RTN-380]
+    oids:
+      system:
+        sysDescr: 1.3.6.1.2.1.1.1.0
+        sysUpTime: 1.3.6.1.2.1.1.3.0
+      interfaces:
+        ifHCInOctets: 1.3.6.1.2.1.31.1.1.1.6
+        ifHCOutOctets: 1.3.6.1.2.1.31.1.1.1.10
+        ifOperStatus: 1.3.6.1.2.1.2.2.1.8
+      microwave:
+        # Huawei RTN Radio MIB
+        hwNeMwRadioRSL: 1.3.6.1.4.1.2011.2.80.12.1.1.1.4
+        hwNeMwRadioTSL: 1.3.6.1.4.1.2011.2.80.12.1.1.1.5
+        hwNeMwRadioModulation: 1.3.6.1.4.1.2011.2.80.12.1.1.1.7
+        hwNeMwRadioBER: 1.3.6.1.4.1.2011.2.80.12.1.1.1.8
+        hwNeMwRadioCapacity: 1.3.6.1.4.1.2011.2.80.12.1.1.1.9
+        hwNeMwLinkStatus: 1.3.6.1.4.1.2011.2.80.12.1.1.1.2
+        hwNeMwAlarmStatus: 1.3.6.1.4.1.2011.2.80.12.1.2
+
+  # ---- MBH - Ericsson MINI-LINK ----
+  ericsson_minilink:
+    vendor: ericsson
+    models: [MINI-LINK, MINI-LINK-6600, MINI-LINK-6352]
+    oids:
+      system:
+        sysDescr: 1.3.6.1.2.1.1.1.0
+        sysUpTime: 1.3.6.1.2.1.1.3.0
+      interfaces:
+        ifHCInOctets: 1.3.6.1.2.1.31.1.1.1.6
+        ifHCOutOctets: 1.3.6.1.2.1.31.1.1.1.10
+        ifOperStatus: 1.3.6.1.2.1.2.2.1.8
+      microwave:
+        # Ericsson MINI-LINK MIB
+        ericssonMLRadioRxLevel: 1.3.6.1.4.1.193.81.2.7.1.1.1.1
+        ericssonMLRadioTxLevel: 1.3.6.1.4.1.193.81.2.7.1.1.1.2
+        ericssonMLModulation: 1.3.6.1.4.1.193.81.2.7.1.1.1.3
+        ericssonMLLinkStatus: 1.3.6.1.4.1.193.81.2.7.1.1.1.5
+
+  # ---- Huawei CE Switch (MBH Aggregation) ----
+  huawei_ce:
+    vendor: huawei
+    models: [CE6870, CE6880, CE8850, CE12800]
+    oids:
+      system:
+        sysDescr: 1.3.6.1.2.1.1.1.0
+        sysUpTime: 1.3.6.1.2.1.1.3.0
+      interfaces:
+        ifHCInOctets: 1.3.6.1.2.1.31.1.1.1.6
+        ifHCOutOctets: 1.3.6.1.2.1.31.1.1.1.10
+        ifOperStatus: 1.3.6.1.2.1.2.2.1.8
+        ifHighSpeed: 1.3.6.1.2.1.31.1.1.1.15
+      lldp:
+        lldpRemTable: 1.0.8802.1.1.2.1.4.1
+        lldpRemSysName: 1.0.8802.1.1.2.1.4.1.1.9
+      cpu:
+        hwEntityCpuUsage: 1.3.6.1.4.1.2011.5.25.31.1.1.1.1.5
+      memory:
+        hwEntityMemUsage: 1.3.6.1.4.1.2011.5.25.31.1.1.1.1.7
