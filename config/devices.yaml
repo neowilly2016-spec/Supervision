@@ -1,217 +1,102 @@
 # ===========================================================
-# Inventaire des equipements reseau - Performance Edition
-# Backbone (Juniper MX960, Huawei NE9000)
-#          + MBH Zone 1 (Juniper MX480/MX204/MX104)
-#          + MBH Zone 2 (Huawei NE9000/NE5000E)
-# SNMPv2c + gRPC Telemetry + Polling adaptatif
+# Configuration des plages de scan SNMP
+# Performance Edition - Auto-discovery uniquement
+# ===========================================================
+# Les devices seront decouverts automatiquement par SNMP
+# (hostname, IP, vendor, model extraits via sysDescr/sysName)
 # ===========================================================
 
 global:
+  # Parametres SNMP
+  snmp_version: 2c
   snmp_timeout: 5
   snmp_retries: 2
-  snmp_version: 2c
+  
   # Polling intervals optimises par criticite
   polling_interval_critical: 30     # Backbone: 30 sec
   polling_interval_high: 120        # MBH: 2 min
   polling_interval_normal: 300      # Standard: 5 min
-
-devices:
-
-  # ---- BACKBONE - Juniper MX960 & Huawei NE9000 ----
-  backbone:
-    - hostname: BACKBONE-MX960-ALGER-PE1
-      ip: 10.200.0.1
-      type: router
-      vendor: juniper
-      model: MX960
-      role: PE
-      site: Alger
-      region: Centre
-      loopback: 10.200.0.1
-      snmp:
-        version: 2c
-        community: "{{ SNMP_DEFAULT_COMMUNITY }}"
-      grpc:
-        enabled: true
-        port: 32767
-      protocols:
-        bgp: true
-        isis: true
-        mpls: true
-        ldp: true
-        rsvp: true
-        segment_routing: true
-      polling_interval: 30  # Critique
-      tags: [backbone, pe, alger, mx960, critical]
-
-    - hostname: BACKBONE-MX960-ALGER-PE2
-      ip: 10.200.0.2
-      type: router
-      vendor: juniper
-      model: MX960
-      role: PE
-      site: Alger
-      region: Centre
-      loopback: 10.200.0.2
-      snmp:
-        version: 2c
-        community: "{{ SNMP_DEFAULT_COMMUNITY }}"
-      grpc:
-        enabled: true
-        port: 32767
-      protocols:
-        bgp: true
-        isis: true
-        mpls: true
-        ldp: true
-        rsvp: true
-        segment_routing: true
-      polling_interval: 30  # Critique
-      tags: [backbone, pe, alger, mx960, critical]
-
-    - hostname: BACKBONE-NE9000-ALGER-P1
-      ip: 10.200.0.3
-      type: router
-      vendor: huawei
-      model: NE9000
-      role: P
-      site: Alger
-      region: Centre
-      loopback: 10.200.0.3
-      snmp:
-        version: 2c
-        community: "{{ SNMP_DEFAULT_COMMUNITY }}"
-      grpc:
-        enabled: true
-        port: 57400
-      protocols:
-        bgp: true
-        isis: true
-        mpls: true
-        segment_routing: true
-      polling_interval: 30  # Critique
-      tags: [backbone, p, alger, ne9000, critical]
-
-  # ---- MBH Zone 1 - Juniper MX480 / MX204 / MX104 ----
-  # Loopback scheme: 10.200.<wilaya>.<node_id>
-  mbh_zone1:
-    - hostname: MBH-Z1-W01-MX480-AGG1
-      ip: 10.200.1.1
-      type: router
-      vendor: juniper
-      model: MX480
-      role: AGG
-      wilaya: 1
-      wilaya_name: Adrar
-      loopback: 10.200.1.1
-      snmp:
-        version: 2c
-        community: "{{ SNMP_DEFAULT_COMMUNITY }}"
-      grpc:
-        enabled: true
-        port: 32767
-      protocols:
-        isis: true
-        mpls: true
-        ldp: true
-      polling_interval: 120  # MBH: 2 min
-      tags: [mbh, zone1, juniper, mx480, wilaya-01]
-
-    - hostname: MBH-Z1-W01-MX204-AGG2
-      ip: 10.200.1.2
-      type: router
-      vendor: juniper
-      model: MX204
-      role: AGG
-      wilaya: 1
-      wilaya_name: Adrar
-      loopback: 10.200.1.2
-      snmp:
-        version: 2c
-        community: "{{ SNMP_DEFAULT_COMMUNITY }}"
-      protocols:
-        isis: true
-        mpls: true
-        ldp: true
-      polling_interval: 120
-      tags: [mbh, zone1, juniper, mx204, wilaya-01]
-
-    - hostname: MBH-Z1-W01-MX104-DIST1
-      ip: 10.200.1.3
-      type: router
-      vendor: juniper
-      model: MX104
-      role: DIST
-      wilaya: 1
-      wilaya_name: Adrar
-      loopback: 10.200.1.3
-      snmp:
-        version: 2c
-        community: "{{ SNMP_DEFAULT_COMMUNITY }}"
-      protocols:
-        isis: true
-        mpls: true
-      polling_interval: 120
-      tags: [mbh, zone1, juniper, mx104, wilaya-01]
-
-  # ---- MBH Zone 2 - Huawei NE9000 / NE5000E ----
-  # Loopback scheme: 10.44.<wilaya>.<node_id>
-  mbh_zone2:
-    - hostname: MBH-Z2-W16-NE9000-AGG1
-      ip: 10.44.16.1
-      type: router
-      vendor: huawei
-      model: NE9000
-      role: AGG
-      wilaya: 16
-      wilaya_name: Alger
-      loopback: 10.44.16.1
-      snmp:
-        version: 2c
-        community: "{{ SNMP_DEFAULT_COMMUNITY }}"
-      grpc:
-        enabled: true
-        port: 57400
-      protocols:
-        isis: true
-        mpls: true
-        segment_routing: true
-      polling_interval: 120
-      tags: [mbh, zone2, huawei, ne9000, wilaya-16]
-
-    - hostname: MBH-Z2-W16-NE5000E-AGG2
-      ip: 10.44.16.2
-      type: router
-      vendor: huawei
-      model: NE5000E
-      role: AGG
-      wilaya: 16
-      wilaya_name: Alger
-      loopback: 10.44.16.2
-      snmp:
-        version: 2c
-        community: "{{ SNMP_DEFAULT_COMMUNITY }}"
-      protocols:
-        isis: true
-        mpls: true
-      polling_interval: 120
-      tags: [mbh, zone2, huawei, ne5000e, wilaya-16]
-
-# ===========================================================
-# Discovery ranges
-# ===========================================================
-discovery:
-  enabled: true
-  ranges:
-    - network: 10.200.0.0/16
-      zone: backbone_mbh_zone1
-      description: "Backbone MX960 + MBH Zone 1 Juniper"
-    - network: 10.44.0.0/16
-      zone: mbh_zone2
-      description: "MBH Zone 2 Huawei"
-  snmp_community: "{{ SNMP_DEFAULT_COMMUNITY }}"
+  
+  # Discovery settings
+  discovery_workers: 20              # Threads concurrents pour scan
+  discovery_schedule: "0 */6 * * *"  # Cron: toutes les 6h
   lldp_discovery: true
   cdp_discovery: true
+
+# ===========================================================
+# Plages reseau a scanner
+# ===========================================================
+network_ranges:
+  
+  # Backbone + MBH Zone 1 (Juniper)
+  - name: "Backbone-MBH-Zone1"
+    network: "10.200.0.0/16"
+    snmp_community: "{{ SNMP_DEFAULT_COMMUNITY }}"
+    description: "Backbone Juniper MX960 + MBH Zone 1 Juniper MX480/MX204/MX104"
+    zone: "Backbone-MBH-Zone1"
+    vendor_hint: "juniper"
+    priority: critical
+    enabled: true
+  
+  # MBH Zone 2 (Huawei)
+  - name: "MBH-Zone2"
+    network: "10.44.0.0/16"
+    snmp_community: "{{ SNMP_DEFAULT_COMMUNITY }}"
+    description: "MBH Zone 2 Huawei NE9000/NE5000E"
+    zone: "MBH-Zone2"
+    vendor_hint: "huawei"
+    priority: high
+    enabled: true
+
+# ===========================================================
+# Regles d'identification automatique
+# ===========================================================
+device_identification:
+  
+  # Juniper
+  juniper:
+    patterns:
+      - sysDescr: ".*juniper.*mx960.*"
+        type: "Backbone"
+        model: "MX960"
+        role: "PE"
+      - sysDescr: ".*juniper.*mx480.*"
+        type: "MBH-Zone1"
+        model: "MX480"
+        role: "AGG"
+      - sysDescr: ".*juniper.*mx204.*"
+        type: "MBH-Zone1"
+        model: "MX204"
+        role: "AGG"
+      - sysDescr: ".*juniper.*mx104.*"
+        type: "MBH-Zone1"
+        model: "MX104"
+        role: "DIST"
+  
+  # Huawei
+  huawei:
+    patterns:
+      - sysDescr: ".*huawei.*ne9000.*"
+        type: "MBH-Zone2"
+        model: "NE9000"
+        role: "AGG"
+      - sysDescr: ".*huawei.*ne5000e.*"
+        type: "MBH-Zone2"
+        model: "NE5000E"
+        role: "AGG"
+
+# ===========================================================
+# Configuration gRPC (optionnel)
+# ===========================================================
+grpc:
+  enabled: true
+  auto_configure: true  # Activer gRPC sur devices decouverts
+  juniper:
+    port: 32767
+    subscription_interval: 10
+  huawei:
+    port: 57400
+    subscription_interval: 10
 
 # ===========================================================
 # Performance optimizations
@@ -219,7 +104,7 @@ discovery:
 optimizations:
   redis_cache:
     enabled: true
-    ttl_default: 300  # 5 min
+    ttl_default: 300
     ttl_bgp_peers: 300
     ttl_isis_adjacency: 300
     ttl_interfaces: 60
@@ -229,14 +114,9 @@ optimizations:
     enabled: true
     compression_after_days: 7
     retention_policy:
-      high_resolution: 7    # 7 jours
-      aggregates_5min: 30   # 30 jours
-      aggregates_1h: 365    # 1 an
-  
-  grpc_streaming:
-    enabled: true
-    subscription_interval: 10  # 10 sec
-    buffer_size: 1000
+      high_resolution: 7
+      aggregates_5min: 30
+      aggregates_1h: 365
   
   ml_anomaly_detection:
     enabled: true
