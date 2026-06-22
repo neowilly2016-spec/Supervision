@@ -1,18 +1,23 @@
 # ===========================================================
-# Inventaire des equipements reseau
-# Backbone (Juniper MX960) + MBH Zone 1 (Juniper MX480/MX204/MX104)
-#                           + MBH Zone 2 (Huawei NE9000/NE5000E)
-#                           + Microwave (Ericsson MINI-LINK / Huawei RTN)
+# Inventaire des equipements reseau - Performance Edition
+# Backbone (Juniper MX960, Huawei NE9000)
+#          + MBH Zone 1 (Juniper MX480/MX204/MX104)
+#          + MBH Zone 2 (Huawei NE9000/NE5000E)
+# SNMPv2c + gRPC Telemetry + Polling adaptatif
 # ===========================================================
 
 global:
-  snmp_timeout: 10
+  snmp_timeout: 5
   snmp_retries: 2
-  polling_interval_default: 300  # secondes
+  snmp_version: 2c
+  # Polling intervals optimises par criticite
+  polling_interval_critical: 30     # Backbone: 30 sec
+  polling_interval_high: 120        # MBH: 2 min
+  polling_interval_normal: 300      # Standard: 5 min
 
 devices:
 
-  # ---- BACKBONE - Juniper MX960 ----
+  # ---- BACKBONE - Juniper MX960 & Huawei NE9000 ----
   backbone:
     - hostname: BACKBONE-MX960-ALGER-PE1
       ip: 10.200.0.1
@@ -26,6 +31,9 @@ devices:
       snmp:
         version: 2c
         community: "{{ SNMP_DEFAULT_COMMUNITY }}"
+      grpc:
+        enabled: true
+        port: 32767
       protocols:
         bgp: true
         isis: true
@@ -33,8 +41,8 @@ devices:
         ldp: true
         rsvp: true
         segment_routing: true
-      polling_interval: 60
-      tags: [backbone, pe, alger, mx960]
+      polling_interval: 30  # Critique
+      tags: [backbone, pe, alger, mx960, critical]
 
     - hostname: BACKBONE-MX960-ALGER-PE2
       ip: 10.200.0.2
@@ -48,6 +56,9 @@ devices:
       snmp:
         version: 2c
         community: "{{ SNMP_DEFAULT_COMMUNITY }}"
+      grpc:
+        enabled: true
+        port: 32767
       protocols:
         bgp: true
         isis: true
@@ -55,8 +66,8 @@ devices:
         ldp: true
         rsvp: true
         segment_routing: true
-      polling_interval: 60
-      tags: [backbone, pe, alger, mx960]
+      polling_interval: 30  # Critique
+      tags: [backbone, pe, alger, mx960, critical]
 
     - hostname: BACKBONE-NE9000-ALGER-P1
       ip: 10.200.0.3
@@ -70,13 +81,16 @@ devices:
       snmp:
         version: 2c
         community: "{{ SNMP_DEFAULT_COMMUNITY }}"
+      grpc:
+        enabled: true
+        port: 57400
       protocols:
         bgp: true
         isis: true
         mpls: true
         segment_routing: true
-      polling_interval: 60
-      tags: [backbone, p, alger, ne9000]
+      polling_interval: 30  # Critique
+      tags: [backbone, p, alger, ne9000, critical]
 
   # ---- MBH Zone 1 - Juniper MX480 / MX204 / MX104 ----
   # Loopback scheme: 10.200.<wilaya>.<node_id>
@@ -93,11 +107,14 @@ devices:
       snmp:
         version: 2c
         community: "{{ SNMP_DEFAULT_COMMUNITY }}"
+      grpc:
+        enabled: true
+        port: 32767
       protocols:
         isis: true
         mpls: true
         ldp: true
-      polling_interval: 120
+      polling_interval: 120  # MBH: 2 min
       tags: [mbh, zone1, juniper, mx480, wilaya-01]
 
     - hostname: MBH-Z1-W01-MX204-AGG2
@@ -152,6 +169,9 @@ devices:
       snmp:
         version: 2c
         community: "{{ SNMP_DEFAULT_COMMUNITY }}"
+      grpc:
+        enabled: true
+        port: 57400
       protocols:
         isis: true
         mpls: true
@@ -177,62 +197,6 @@ devices:
       polling_interval: 120
       tags: [mbh, zone2, huawei, ne5000e, wilaya-16]
 
-  # ---- Microwave Links ----
-  microwave:
-    - hostname: MW-MINILINK-W01-SITE1
-      ip: 192.168.100.1
-      type: microwave
-      vendor: ericsson
-      model: MINI-LINK-6352
-      role: MW
-      wilaya: 1
-      snmp:
-        version: 2c
-        community: "{{ SNMP_DEFAULT_COMMUNITY }}"
-      metrics:
-        rssi: true
-        ber: true
-        modulation: true
-        capacity: true
-      polling_interval: 60
-      tags: [microwave, ericsson, mini-link, wilaya-01]
-
-    - hostname: MW-RTN950A-W01-SITE2
-      ip: 192.168.100.2
-      type: microwave
-      vendor: huawei
-      model: RTN-950A
-      role: MW
-      wilaya: 1
-      snmp:
-        version: 2c
-        community: "{{ SNMP_DEFAULT_COMMUNITY }}"
-      metrics:
-        rssi: true
-        ber: true
-        modulation: true
-        capacity: true
-      polling_interval: 60
-      tags: [microwave, huawei, rtn950a, wilaya-01]
-
-    - hostname: MW-RTN980-W01-SITE3
-      ip: 192.168.100.3
-      type: microwave
-      vendor: huawei
-      model: RTN-980
-      role: MW
-      wilaya: 1
-      snmp:
-        version: 2c
-        community: "{{ SNMP_DEFAULT_COMMUNITY }}"
-      metrics:
-        rssi: true
-        ber: true
-        modulation: true
-        capacity: true
-      polling_interval: 60
-      tags: [microwave, huawei, rtn980, wilaya-01]
-
 # ===========================================================
 # Discovery ranges
 # ===========================================================
@@ -245,9 +209,39 @@ discovery:
     - network: 10.44.0.0/16
       zone: mbh_zone2
       description: "MBH Zone 2 Huawei"
-    - network: 192.168.100.0/24
-      zone: microwave
-      description: "Microwave management"
   snmp_community: "{{ SNMP_DEFAULT_COMMUNITY }}"
   lldp_discovery: true
   cdp_discovery: true
+
+# ===========================================================
+# Performance optimizations
+# ===========================================================
+optimizations:
+  redis_cache:
+    enabled: true
+    ttl_default: 300  # 5 min
+    ttl_bgp_peers: 300
+    ttl_isis_adjacency: 300
+    ttl_interfaces: 60
+    ttl_mpls_lsp: 120
+  
+  timescaledb_compression:
+    enabled: true
+    compression_after_days: 7
+    retention_policy:
+      high_resolution: 7    # 7 jours
+      aggregates_5min: 30   # 30 jours
+      aggregates_1h: 365    # 1 an
+  
+  grpc_streaming:
+    enabled: true
+    subscription_interval: 10  # 10 sec
+    buffer_size: 1000
+  
+  ml_anomaly_detection:
+    enabled: true
+    models:
+      - bgp_flap_detection
+      - isis_spf_anomaly
+      - traffic_forecasting
+    training_period_days: 30
