@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-Network Discovery Module - Auto-discover devices via SNMPv2
-Scans configured network ranges and discovers Backbone & MBH devices
-Performance Edition: Optimized for Backbone and MBH only
+Network Discovery Module - SNMPv2 Auto-Discovery
+Scans network ranges and classifies devices by role (PE/P/AGG/DIST)
 """
 
 import os
+import re
+import yaml
 import ipaddress
 import concurrent.futures
 import logging
@@ -17,34 +18,24 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class NetworkDiscovery:
-    def __init__(self, db_config):
+    def __init__(self, db_config, config_file='config/devices.yaml'):
         self.db_config = db_config
+        self.config = self.load_config(config_file)
         
-        # Network ranges to scan - Backbone and MBH only
-        self.scan_ranges = [
-            {
-                'network': '10.200.0.0/16',
-                'community': 'mpbn',
-                'zone': 'Backbone-MBH-Zone1',
-                'vendor_hint': 'juniper',
-                'description': 'Backbone MX960 + MBH Zone 1 Juniper MX480/MX204/MX104'
-            },
-            {
-                'network': '10.44.0.0/16',
-                'community': 'mpbn',
-                'zone': 'MBH-Zone2',
-                'vendor_hint': 'huawei',
-                'description': 'MBH Zone 2 Huawei NE9000/NE5000E'
-            }
-        ]
-
-    def discover_device(self, ip, community, zone, vendor_hint):
+    def load_config(self, config_file):
+        """Load configuration from devices.yaml"""
+        try:
+            with open(config_file, 'r') as f:
+                return yaml.safe_load(f)
+        except Exception as e:
+            logger.error(f"Error loading config: {e}")
+            return None
+    
+    def discover_device(self, ip, community):
         """
-        Discover a device at the given IP via SNMPv2
-        Returns device info dict if successful, None otherwise
+        Discover device via SNMPv2 and extract basic info
         """
         try:
-            # SNMP GET: sysDescr, sysName
             iterator = getCmd(
                 SnmpEngine(),
                 CommunityData(community, mpModel=1),  # SNMPv2c
@@ -62,79 +53,84 @@ class NetworkDiscovery:
             sys_descr = str(varBinds[0][1])
             sys_name = str(varBinds[1][1])
             
-            # Identify device type and vendor
-            device_type, vendor = self.identify_type(sys_descr, vendor_hint, ip)
+            # Classify device
+            vendor, model = self.identify_vendor_model(sys_descr)
+            role = self.classify_role(sys_descr, ip)
             
-            device_info = {
-                'ip': ip,
-                'hostname': sys_name,
-                'sys_descr': sys_descr,
-                'type': device_type,
-                'vendor': vendor,
-                'zone': zone,
-                'community': community,
-                'snmp_version': '2c'
-            }
+            if vendor and model and role:
+                device_info = {
+                    'ip': ip,
+                    'hostname': sys_name,
+                    'sys_descr': sys_descr,
+                    'vendor': vendor,
+                    'model': model,
+                    'role': role,
+                    'snmp_version': '2c',
+                    'community': community
+                }
+                
+                logger.info(f"Discovered: {sys_name} ({ip}) - {vendor} {model} [Role: {role}]")
+                return device_info
             
-            logger.info(f"Discovered: {sys_name} ({ip}) - {vendor} {device_type} in {zone}")
-            return device_info
+            return None
             
         except Exception as e:
-            # Device not responding or SNMP disabled
             return None
-
-    def identify_type(self, sys_descr, vendor_hint, ip):
+    
+    def identify_vendor_model(self, sys_descr):
         """
-        Identify device type and vendor from sysDescr and IP
-        Returns (device_type, vendor)
+        Identify vendor and model from sysDescr using patterns from config
         """
         sys_descr_lower = sys_descr.lower()
+        vendor_detection = self.config.get('vendor_detection', {})
         
-        # Identify Juniper devices
-        if 'juniper' in sys_descr_lower or vendor_hint == 'juniper':
-            # Backbone MX960 (typically 10.200.0.x)
-            if 'mx960' in sys_descr_lower:
-                return 'Backbone', 'juniper'
-            # MBH Zone 1 Juniper
-            elif any(model in sys_descr_lower for model in ['mx480', 'mx204', 'mx104']):
-                return 'MBH-Zone1', 'juniper'
-            else:
-                # Generic Juniper router
-                return 'router', 'juniper'
+        for vendor, vendor_config in vendor_detection.items():
+            # Check vendor pattern
+            for pattern_entry in vendor_config.get('patterns', []):
+                pattern = pattern_entry.get('sysDescr', '')
+                if re.search(pattern, sys_descr_lower):
+                    # Find model
+                    models = vendor_config.get('models', {})
+                    for model_name, model_pattern in models.items():
+                        if re.search(model_pattern, sys_descr_lower):
+                            return vendor, model_name
+                    return vendor, 'Unknown'
         
-        # Identify Huawei devices
-        elif 'huawei' in sys_descr_lower or vendor_hint == 'huawei':
-            # Check IP range to distinguish Backbone vs MBH
-            ip_obj = ipaddress.ip_address(ip)
-            backbone_network = ipaddress.ip_network('10.200.0.0/24')  # Backbone subnet
-            
-            if ip_obj in backbone_network:
-                # Backbone Huawei NE9000
-                return 'Backbone', 'huawei'
-            else:
-                # MBH Zone 2 Huawei (10.44.x.y)
-                if any(model in sys_descr_lower for model in ['ne9000', 'ne5000']):
-                    return 'MBH-Zone2', 'huawei'
-                else:
-                    return 'router', 'huawei'
-        
-        # Unknown device
-        return 'unknown', 'unknown'
-
-    def scan_network(self, network_range, community, zone, vendor_hint, description):
+        return None, None
+    
+    def classify_role(self, sys_descr, ip):
         """
-        Scan entire network range for SNMPv2-enabled devices
-        Uses concurrent workers for faster discovery
+        Classify device role (PE/P/AGG/DIST) based on sysDescr patterns
+        """
+        sys_descr_lower = sys_descr.lower()
+        role_classification = self.config.get('role_classification', {})
+        
+        # Try each role in order: PE, P, AGG, DIST
+        for role in ['PE', 'P', 'AGG', 'DIST']:
+            role_config = role_classification.get(role, {})
+            patterns = role_config.get('patterns', [])
+            
+            for pattern_entry in patterns:
+                pattern = pattern_entry.get('sysDescr', '')
+                if re.search(pattern, sys_descr_lower):
+                    return role
+        
+        return 'Unknown'
+    
+    def scan_network(self, network_range, community):
+        """
+        Scan a network range for SNMP devices
         """
         network = ipaddress.ip_network(network_range, strict=False)
         discovered_devices = []
         
-        logger.info(f"Scanning {network_range} ({description})...")
+        logger.info(f"Scanning {network_range}...")
         
-        # Concurrent scanning with thread pool
-        with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
+        workers = self.config.get('global', {}).get('discovery_workers', 20)
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
             futures = {
-                executor.submit(self.discover_device, str(ip), community, zone, vendor_hint): ip
+                executor.submit(self.discover_device, str(ip), community): ip
                 for ip in network.hosts()
             }
             
@@ -145,21 +141,20 @@ class NetworkDiscovery:
         
         logger.info(f"Scan complete for {network_range}: found {len(discovered_devices)} devices")
         return discovered_devices
-
+    
     def save_to_database(self, devices):
         """
-        Save discovered devices to PostgreSQL/TimescaleDB
+        Save discovered devices to TimescaleDB
         """
         try:
             conn = psycopg2.connect(**self.db_config)
             cur = conn.cursor()
             
             for device in devices:
-                # Upsert device
                 cur.execute(
                     """
                     INSERT INTO devices (
-                        hostname, ip_address, vendor, device_type, zone, 
+                        hostname, ip_address, vendor, model, role,
                         snmp_community, snmp_version, sys_descr, discovered_at
                     )
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW())
@@ -167,13 +162,13 @@ class NetworkDiscovery:
                     DO UPDATE SET 
                         hostname = EXCLUDED.hostname,
                         vendor = EXCLUDED.vendor,
-                        device_type = EXCLUDED.device_type,
-                        zone = EXCLUDED.zone,
+                        model = EXCLUDED.model,
+                        role = EXCLUDED.role,
                         sys_descr = EXCLUDED.sys_descr,
                         discovered_at = NOW()
                     """,
-                    (device['hostname'], device['ip'], device['vendor'], 
-                     device['type'], device['zone'], device['community'], 
+                    (device['hostname'], device['ip'], device['vendor'],
+                     device['model'], device['role'], device['community'],
                      device['snmp_version'], device['sys_descr'])
                 )
             
@@ -183,31 +178,35 @@ class NetworkDiscovery:
             logger.info(f"Saved {len(devices)} devices to database")
         except Exception as e:
             logger.error(f"Error saving to database: {e}")
-
+    
     def run_discovery(self):
         """
         Run discovery on all configured network ranges
-        Backbone and MBH only
         """
         all_devices = []
         
-        for scan_range in self.scan_ranges:
-            devices = self.scan_network(
-                scan_range['network'],
-                scan_range['community'],
-                scan_range['zone'],
-                scan_range['vendor_hint'],
-                scan_range['description']
-            )
+        network_ranges = self.config.get('network_ranges', [])
+        community = self.config.get('global', {}).get('snmp_community', 'public')
+        
+        for network_range in network_ranges:
+            devices = self.scan_network(network_range, community)
             all_devices.extend(devices)
         
         if all_devices:
             self.save_to_database(all_devices)
         
-        return all_devices
+        # Group by role for summary
+        by_role = {}
+        for device in all_devices:
+            role = device['role']
+            if role not in by_role:
+                by_role[role] = []
+            by_role[role].append(device)
+        
+        return all_devices, by_role
 
 if __name__ == '__main__':
-    # Database configuration from environment
+    # Database configuration
     db_config = {
         'host': os.getenv('POSTGRES_HOST', 'timescaledb'),
         'port': os.getenv('POSTGRES_PORT', 5432),
@@ -217,10 +216,15 @@ if __name__ == '__main__':
     }
     
     discovery = NetworkDiscovery(db_config)
-    devices = discovery.run_discovery()
+    devices, by_role = discovery.run_discovery()
     
-    print(f"\nDiscovery complete: {len(devices)} devices found")
-    print(f"\n{'Hostname':<30} {'IP':<15} {'Vendor':<10} {'Type':<20} {'Zone':<25}")
-    print("=" * 100)
-    for device in devices:
-        print(f"{device['hostname']:<30} {device['ip']:<15} {device['vendor']:<10} {device['type']:<20} {device['zone']:<25}")
+    print(f"\n{'='*80}")
+    print(f"Discovery complete: {len(devices)} devices found")
+    print(f"{'='*80}\n")
+    
+    # Summary by role
+    for role, role_devices in sorted(by_role.items()):
+        print(f"\n[{role}] - {len(role_devices)} devices:")
+        print(f"{'-'*80}")
+        for device in role_devices:
+            print(f"  {device['hostname']:<30} {device['ip']:<15} {device['vendor']:<10} {device['model']:<10}")
