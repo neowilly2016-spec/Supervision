@@ -1,195 +1,253 @@
-# ============================================================
+# ===========================================================
 # Inventaire des equipements reseau
-# Backbone (Juniper MX) + MBH Zone 1 (Juniper) + MBH Zone 2 (Huawei NE9000 / Microwave)# ============================================================
+# Backbone (Juniper MX960) + MBH Zone 1 (Juniper MX480/MX204/MX104)
+#                           + MBH Zone 2 (Huawei NE9000/NE5000E)
+#                           + Microwave (Ericsson MINI-LINK / Huawei RTN)
+# ===========================================================
+
+global:
+  snmp_timeout: 10
+  snmp_retries: 2
+  polling_interval_default: 300  # secondes
 
 devices:
 
-  # ---- BACKBONE - Routeurs Juniper MX ----
-  - hostname: MX-ALGER-PE1
-    ip: 192.168.1.1
-    type: router
-    vendor: juniper
-    model: MX480
-    role: PE
-    site: Alger
-    region: Centre
-    snmp:
-      version: 2c
-      community: public
-    protocols:
-      bgp: true
-      isis: true
-      mpls: true
-      ldp: true
-      rsvp: true
-    tags: [backbone, pe, alger]
+  # ---- BACKBONE - Juniper MX960 ----
+  backbone:
+    - hostname: BACKBONE-MX960-ALGER-PE1
+      ip: 10.200.0.1
+      type: router
+      vendor: juniper
+      model: MX960
+      role: PE
+      site: Alger
+      region: Centre
+      loopback: 10.200.0.1
+      snmp:
+        version: 2c
+        community: "{{ SNMP_DEFAULT_COMMUNITY }}"
+      protocols:
+        bgp: true
+        isis: true
+        mpls: true
+        ldp: true
+        rsvp: true
+        segment_routing: true
+      polling_interval: 60
+      tags: [backbone, pe, alger, mx960]
 
-  - hostname: MX-ALGER-PE2
-    ip: 192.168.1.2
-    type: router
-    vendor: juniper
-    model: MX480
-    role: PE
-    site: Alger
-    region: Centre
-    snmp:
-      version: 2c
-      community: public
-    protocols:
-      bgp: true
-      isis: true
-      mpls: true
-      ldp: true
-      rsvp: true
-    tags: [backbone, pe, alger]
+    - hostname: BACKBONE-MX960-ALGER-PE2
+      ip: 10.200.0.2
+      type: router
+      vendor: juniper
+      model: MX960
+      role: PE
+      site: Alger
+      region: Centre
+      loopback: 10.200.0.2
+      snmp:
+        version: 2c
+        community: "{{ SNMP_DEFAULT_COMMUNITY }}"
+      protocols:
+        bgp: true
+        isis: true
+        mpls: true
+        ldp: true
+        rsvp: true
+        segment_routing: true
+      polling_interval: 60
+      tags: [backbone, pe, alger, mx960]
 
-  - hostname: MX-ORAN-PE1
-    ip: 192.168.2.1
-    type: router
-    vendor: juniper
-    model: MX240
-    role: PE
-    site: Oran
-    region: Ouest
-    snmp:
-      version: 2c
-      community: public
-    protocols:
-      bgp: true
-      isis: true
-      mpls: true
-      ldp: true
-      rsvp: true
-    tags: [backbone, pe, oran]
+    - hostname: BACKBONE-NE9000-ALGER-P1
+      ip: 10.200.0.3
+      type: router
+      vendor: huawei
+      model: NE9000
+      role: P
+      site: Alger
+      region: Centre
+      loopback: 10.200.0.3
+      snmp:
+        version: 2c
+        community: "{{ SNMP_DEFAULT_COMMUNITY }}"
+      protocols:
+        bgp: true
+        isis: true
+        mpls: true
+        segment_routing: true
+      polling_interval: 60
+      tags: [backbone, p, alger, ne9000]
 
-  - hostname: MX-CONSTANTINE-PE1
-    ip: 192.168.3.1
-    type: router
-    vendor: juniper
-    model: MX240
-    role: PE
-    site: Constantine
-    region: Est
-    snmp:
-      version: 2c
-      community: public
-    protocols:
-      bgp: true
-      isis: true
-      mpls: true
-    tags: [backbone, pe, constantine]
+  # ---- MBH Zone 1 - Juniper MX480 / MX204 / MX104 ----
+  # Loopback scheme: 10.200.<wilaya>.<node_id>
+  mbh_zone1:
+    - hostname: MBH-Z1-W01-MX480-AGG1
+      ip: 10.200.1.1
+      type: router
+      vendor: juniper
+      model: MX480
+      role: AGG
+      wilaya: 1
+      wilaya_name: Adrar
+      loopback: 10.200.1.1
+      snmp:
+        version: 2c
+        community: "{{ SNMP_DEFAULT_COMMUNITY }}"
+      protocols:
+        isis: true
+        mpls: true
+        ldp: true
+      polling_interval: 120
+      tags: [mbh, zone1, juniper, mx480, wilaya-01]
 
-  # ---- BACKBONE - Routeurs Huawei NE9000 ----
-  - hostname: NE9K-ALGER-P1
-    ip: 192.168.1.10
-    type: router
-    vendor: huawei
-    model: NE9000
-    role: P
-    site: Alger
-    region: Centre
-    snmp:
-      version: 2c
-      community: public
-    protocols:
-      bgp: true
-      isis: true
-      mpls: true
-      ldp: true
-      rsvp: true
-      sr: true
-    tags: [backbone, p, alger]
+    - hostname: MBH-Z1-W01-MX204-AGG2
+      ip: 10.200.1.2
+      type: router
+      vendor: juniper
+      model: MX204
+      role: AGG
+      wilaya: 1
+      wilaya_name: Adrar
+      loopback: 10.200.1.2
+      snmp:
+        version: 2c
+        community: "{{ SNMP_DEFAULT_COMMUNITY }}"
+      protocols:
+        isis: true
+        mpls: true
+        ldp: true
+      polling_interval: 120
+      tags: [mbh, zone1, juniper, mx204, wilaya-01]
 
-  - hostname: NE9K-ALGER-P2
-    ip: 192.168.1.11
-    type: router
-    vendor: huawei
-    model: NE9000
-    role: P
-    site: Alger
-    region: Centre
-    snmp:
-      version: 2c
-      community: public
-    protocols:
-      bgp: true
-      isis: true
-      mpls: true
-      ldp: true
-      rsvp: true
-      sr: true
-    tags: [backbone, p, alger]
+    - hostname: MBH-Z1-W01-MX104-DIST1
+      ip: 10.200.1.3
+      type: router
+      vendor: juniper
+      model: MX104
+      role: DIST
+      wilaya: 1
+      wilaya_name: Adrar
+      loopback: 10.200.1.3
+      snmp:
+        version: 2c
+        community: "{{ SNMP_DEFAULT_COMMUNITY }}"
+      protocols:
+        isis: true
+        mpls: true
+      polling_interval: 120
+      tags: [mbh, zone1, juniper, mx104, wilaya-01]
 
-  # ---- MBH - Aggregation Huawei ----
-  - hostname: HW-ALGER-AGG1
-    type: switch    loopback: 10.44.16.1
-    zone: MBH-Zone2
-    vendor: huawei
-    model: CE6870
-    role: MBH-AGG
-    site: Alger
-    region: Centre
-    snmp:
-      version: 2c
-    protocols:      community: mobilis-read-only
-      bgp: false
-      isis: true
-      mpls: true
-    tags: [mbh, aggregation, alger]
+  # ---- MBH Zone 2 - Huawei NE9000 / NE5000E ----
+  # Loopback scheme: 10.44.<wilaya>.<node_id>
+  mbh_zone2:
+    - hostname: MBH-Z2-W16-NE9000-AGG1
+      ip: 10.44.16.1
+      type: router
+      vendor: huawei
+      model: NE9000
+      role: AGG
+      wilaya: 16
+      wilaya_name: Alger
+      loopback: 10.44.16.1
+      snmp:
+        version: 2c
+        community: "{{ SNMP_DEFAULT_COMMUNITY }}"
+      protocols:
+        isis: true
+        mpls: true
+        segment_routing: true
+      polling_interval: 120
+      tags: [mbh, zone2, huawei, ne9000, wilaya-16]
 
-  - hostname: HW-ORAN-AGG1
-    loopback: 10.44.31.1
-    zone: MBH-Zone2
-    type: switch
-    vendor: huawei
-    model: CE6870
-    role: MBH-AGG
-    site: Oran
-    region: Ouest
-    snmp:
-      version: 2c
-      mpls: true
-      community: mobilis-read-only
-    protocols:
-    tags: [mbh, aggregation, oran]
+    - hostname: MBH-Z2-W16-NE5000E-AGG2
+      ip: 10.44.16.2
+      type: router
+      vendor: huawei
+      model: NE5000E
+      role: AGG
+      wilaya: 16
+      wilaya_name: Alger
+      loopback: 10.44.16.2
+      snmp:
+        version: 2c
+        community: "{{ SNMP_DEFAULT_COMMUNITY }}"
+      protocols:
+        isis: true
+        mpls: true
+      polling_interval: 120
+      tags: [mbh, zone2, huawei, ne5000e, wilaya-16]
 
-  # ---- MBH - Liens Microwave ----
-  - hostname: MW-ALGER-SITE001
-    ip: 10.20.1.1
-    zone: MBH-Zone1
-    type: microwave
-    vendor: ericsson
-    model: MINI-LINK
-    role: MBH-MW
-    site: Alger-Site001
-    region: Centre
-    snmp:
-      version: 2c
-    mbh_params:      community: mpbn
-      frequency_ghz: 18
-      modulation: 256QAM
-      capacity_mbps: 400
-      far_end_ip: 10.20.1.2
-      far_end_hostname: MW-ALGER-SITE001-FAR
-    tags: [mbh, microwave, alger]
+  # ---- Microwave Links ----
+  microwave:
+    - hostname: MW-MINILINK-W01-SITE1
+      ip: 192.168.100.1
+      type: microwave
+      vendor: ericsson
+      model: MINI-LINK-6352
+      role: MW
+      wilaya: 1
+      snmp:
+        version: 2c
+        community: "{{ SNMP_DEFAULT_COMMUNITY }}"
+      metrics:
+        rssi: true
+        ber: true
+        modulation: true
+        capacity: true
+      polling_interval: 60
+      tags: [microwave, ericsson, mini-link, wilaya-01]
 
-  - hostname: MW-ALGER-SITE002
-    ip: 10.20.2.1
-    loopback: 10.200.16.2  # Zone 1 - Wilaya 16 (Alger)
-    zone: MBH-Zone1
-    type: microwave
-    vendor: huawei
-    model: OptiX-RTN-950A
-    role: MBH-MW
-    site: Alger-Site002
-    region: Centre
-    snmp:
-      version: 2c
-      community: public
-    mbh_params:
-      frequency_ghz: 23
-      modulation: 128QAM
-      capacity_mbps: 200
-      far_end_ip: 10.20.2.2
-      far_end_hostname: MW-ALGER-SITE002-FAR
-    tags: [mbh, microwave, alger]
+    - hostname: MW-RTN950A-W01-SITE2
+      ip: 192.168.100.2
+      type: microwave
+      vendor: huawei
+      model: RTN-950A
+      role: MW
+      wilaya: 1
+      snmp:
+        version: 2c
+        community: "{{ SNMP_DEFAULT_COMMUNITY }}"
+      metrics:
+        rssi: true
+        ber: true
+        modulation: true
+        capacity: true
+      polling_interval: 60
+      tags: [microwave, huawei, rtn950a, wilaya-01]
+
+    - hostname: MW-RTN980-W01-SITE3
+      ip: 192.168.100.3
+      type: microwave
+      vendor: huawei
+      model: RTN-980
+      role: MW
+      wilaya: 1
+      snmp:
+        version: 2c
+        community: "{{ SNMP_DEFAULT_COMMUNITY }}"
+      metrics:
+        rssi: true
+        ber: true
+        modulation: true
+        capacity: true
+      polling_interval: 60
+      tags: [microwave, huawei, rtn980, wilaya-01]
+
+# ===========================================================
+# Discovery ranges
+# ===========================================================
+discovery:
+  enabled: true
+  ranges:
+    - network: 10.200.0.0/16
+      zone: backbone_mbh_zone1
+      description: "Backbone MX960 + MBH Zone 1 Juniper"
+    - network: 10.44.0.0/16
+      zone: mbh_zone2
+      description: "MBH Zone 2 Huawei"
+    - network: 192.168.100.0/24
+      zone: microwave
+      description: "Microwave management"
+  snmp_community: "{{ SNMP_DEFAULT_COMMUNITY }}"
+  lldp_discovery: true
+  cdp_discovery: true
