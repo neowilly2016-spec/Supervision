@@ -210,6 +210,96 @@ def get_stats():
         logger.error(f"Error fetching stats: {e}")
         return jsonify({'error': str(e)}), 500
 
+# ============================================================
+# Optical Metrics API Endpoints
+# ============================================================
+
+@app.route('/api/optical/devices/<device_id>')
+def get_device_optical_metrics(device_id):
+    """Get optical metrics for a specific device"""
+    timerange = request.args.get('timerange', '24h')
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT 
+                time,
+                if_index,
+                if_name,
+                rx_power_dbm,
+                tx_power_dbm,
+                temperature_celsius,
+                bias_current_ma,
+                voltage_v
+            FROM optical_metrics
+            WHERE device_id = %s
+              AND time > NOW() - INTERVAL %s
+            ORDER BY time DESC, if_index
+        """, (device_id, timerange))
+        metrics = cur.fetchall()
+        cur.close()
+        conn.close()
+        return jsonify(metrics)
+    except Exception as e:
+        logger.error(f"Error fetching optical metrics: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/optical/interface/<device_id>/<int:if_index>')
+def get_interface_optical_metrics(device_id, if_index):
+    """Get optical metrics for a specific interface"""
+    timerange = request.args.get('timerange', '24h')
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT 
+                time,
+                if_name,
+                rx_power_dbm,
+                tx_power_dbm,
+                temperature_celsius,
+                bias_current_ma,
+                voltage_v
+            FROM optical_metrics
+            WHERE device_id = %s
+              AND if_index = %s
+              AND time > NOW() - INTERVAL %s
+            ORDER BY time DESC
+        """, (device_id, if_index, timerange))
+        metrics = cur.fetchall()
+        cur.close()
+        conn.close()
+        return jsonify(metrics)
+    except Exception as e:
+        logger.error(f"Error fetching interface optical metrics: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/optical/summary/<device_id>')
+def get_optical_summary(device_id):
+    """Get latest optical metrics summary for all interfaces of a device"""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT DISTINCT ON (if_index)
+                if_index,
+                if_name,
+                rx_power_dbm,
+                tx_power_dbm,
+                temperature_celsius,
+                time
+            FROM optical_metrics
+            WHERE device_id = %s
+            ORDER BY if_index, time DESC
+        """, (device_id,))
+        summary = cur.fetchall()
+        cur.close()
+        conn.close()
+        return jsonify(summary)
+    except Exception as e:
+        logger.error(f"Error fetching optical summary: {e}")
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     port = int(os.getenv('APP_PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
