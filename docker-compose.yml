@@ -213,6 +213,23 @@ services:
     networks:
       - supervision_net
 
+  # IP Enrichment Collector (IPAM)
+  ip_enrichment:
+    build: ./backend
+    container_name: supervision_ip_enrichment
+    restart: unless-stopped
+    command: python /app/collectors/ip_enrichment_collector.py
+    env_file: .env
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - supervision_net
+
 volumes:
   postgres_data:
     driver: local
