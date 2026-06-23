@@ -476,6 +476,97 @@ def get_vlan_vrf_mapping():
         conn.close()
         return jsonify(mappings)
     except Exception as e:
+
+
+# =============================================================
+# IPAM Endpoints - IP Prefixes
+# =============================================================
+
+@app.route('/api/ipam/prefixes', methods=['GET'])
+def get_prefixes():
+    """List IP prefixes with optional filters (vlan_id, vrf_id, status)"""
+    vlan_id = request.args.get('vlan_id')
+    vrf_id = request.args.get('vrf_id')
+    status = request.args.get('status', 'active')
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        query = """
+            SELECT p.*, 
+                   vl.vid, vl.name AS vlan_name,
+                   vr.name AS vrf_name, vr.rd
+            FROM ip_prefixes p
+            LEFT JOIN vlans vl ON p.vlan_id = vl.id
+            LEFT JOIN vrfs vr ON p.vrf_id = vr.id
+            WHERE p.status = %s
+        """
+        params = [status]
+        if vlan_id:
+            query += " AND p.vlan_id = %s"
+            params.append(vlan_id)
+        if vrf_id:
+            query += " AND p.vrf_id = %s"
+            params.append(vrf_id)
+        query += " ORDER BY p.prefix"
+        cur.execute(query, params)
+        prefixes = cur.fetchall()
+        cur.close()
+        conn.close()
+        return jsonify(prefixes)
+    except Exception as e:
+        logger.error(f"Error fetching prefixes: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/ipam/prefixes/<int:prefix_id>', methods=['GET'])
+def get_prefix(prefix_id):
+    """Get a single prefix with full enrichment (VLAN + VRF)"""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT p.*, 
+                   vl.vid, vl.name AS vlan_name, vl.site,
+                   vr.name AS vrf_name, vr.rd, vr.description AS vrf_description
+            FROM ip_prefixes p
+            LEFT JOIN vlans vl ON p.vlan_id = vl.id
+            LEFT JOIN vrfs vr ON p.vrf_id = vr.id
+            WHERE p.id = %s
+        """, (prefix_id,))
+        prefix = cur.fetchone()
+        cur.close()
+        conn.close()
+        if not prefix:
+            return jsonify({'error': 'Prefix not found'}), 404
+        return jsonify(prefix)
+    except Exception as e:
+        logger.error(f"Error fetching prefix {prefix_id}: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/ipam/prefixes/utilization', methods=['GET'])
+def get_prefix_utilization():
+    """Get prefix utilization summary (total, used, available)"""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT 
+                COUNT(*) AS total_prefixes,
+                SUM(CASE WHEN is_pool = true THEN 1 ELSE 0 END) AS pool_prefixes,
+                AVG(utilization) AS avg_utilization,
+                SUM(CASE WHEN vlan_id IS NOT NULL THEN 1 ELSE 0 END) AS enriched_with_vlan,
+                SUM(CASE WHEN vrf_id IS NOT NULL THEN 1 ELSE 0 END) AS enriched_with_vrf
+            FROM ip_prefixes
+            WHERE status = 'active'
+        """)
+        stats = cur.fetchone()
+        cur.close()
+        conn.close()
+        return jsonify(stats)
+    except Exception as e:
+        logger.error(f"Error fetching prefix utilization: {e}")
+        return jsonify({'error': str(e)}), 500
         logger.error(f"Error fetching VLAN-VRF mappings: {e}")
         return jsonify({'error': str(e)}), 500
 
