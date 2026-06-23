@@ -1,7 +1,6 @@
 version: '3.8'
 
 services:
-
   # PostgreSQL + TimescaleDB
   db:
     image: timescale/timescaledb:latest-pg15
@@ -18,6 +17,11 @@ services:
       - "5432:5432"
     networks:
       - supervision_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-supervision}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Redis (cache & message broker)
   redis:
@@ -26,69 +30,131 @@ services:
     restart: unless-stopped
     networks:
       - supervision_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Collecteur SNMP / topology / BGP / MPLS / MBH
   collector:
-    build: ./collector
+    build: ./backend
     container_name: supervision_collector
     restart: unless-stopped
     env_file: .env
     volumes:
       - ./config:/app/config:ro
-      - ./collector:/app
+      - ./backend:/app
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - supervision_net
 
   # API Flask
   api:
-    build: ./api
+    build: ./backend
     container_name: supervision_api
     restart: unless-stopped
     env_file: .env
     ports:
       - "5000:5000"
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - supervision_net
 
-  # Frontend Nginx
+  # Frontend React (configuration & admin)
   frontend:
     build: ./frontend
     container_name: supervision_frontend
     restart: unless-stopped
     ports:
       - "80:80"
+      - "443:443"
+    environment:
+      - VITE_API_URL=http://localhost:5000
+      - VITE_GRAFANA_URL=http://localhost:3000
     depends_on:
       - api
     networks:
       - supervision_net
 
-  # Grafana (dashboards optionnels)
+  # Grafana (visualisation principale - Option 2)
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:10.4.1
     container_name: supervision_grafana
     restart: unless-stopped
+    user: "472"
     environment:
+      # Security
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin123}
+      GF_SECURITY_SECRET_KEY: ${GRAFANA_SECRET_KEY:-SW2YcwTIb9zpOOhoPsMm}
+      
+      # Server
       GF_SERVER_ROOT_URL: http://localhost:3000
+      GF_SERVER_SERVE_FROM_SUB_PATH: false
+      
+      # Database (PostgreSQL for Grafana metadata)
+      GF_DATABASE_TYPE: postgres
+      GF_DATABASE_HOST: db:5432
+      GF_DATABASE_NAME: ${POSTGRES_DB:-supervision}
+      GF_DATABASE_USER: ${POSTGRES_USER:-supervision}
+      GF_DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-supervision123}
+      GF_DATABASE_SSL_MODE: disable
+      
+      # Plugins
+      GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource,grafana-worldmap-panel,grafana-piechart-panel
+      
+      # Auth
+      GF_AUTH_ANONYMOUS_ENABLED: false
+      GF_AUTH_BASIC_ENABLED: true
+      
+      # Features
+      GF_FEATURE_TOGGLES_ENABLE: publicDashboards
+      
+      # Alerting
+      GF_ALERTING_ENABLED: true
+      GF_UNIFIED_ALERTING_ENABLED: true
+      
+      # SMTP (optional)
+      GF_SMTP_ENABLED: ${SMTP_ENABLED:-false}
+      GF_SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com:587}
+      GF_SMTP_USER: ${SMTP_USER:-}
+      GF_SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      GF_SMTP_FROM_ADDRESS: ${SMTP_FROM:-noreply@supervision.local}
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning
+      - ./config/grafana/dashboards:/var/lib/grafana/dashboards
     ports:
       - "3000:3000"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - supervision_net
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   postgres_data:
+    driver: local
   grafana_data:
+    driver: local
 
 networks:
   supervision_net:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16
