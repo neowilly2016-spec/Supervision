@@ -1,0 +1,99 @@
+---
+# Oxidized Configuration for Backbone/MBH Network Monitoring
+# Supports Juniper and Huawei devices
+
+username: admin
+password: $OXIDIZED_PASSWORD
+model: junos
+interval: 3600  # Backup every hour
+use_syslog: false
+debug: false
+threads: 30
+timeout: 20
+retries: 3
+prompt: !ruby/regexp /^([\w.@()-]+[#>]\s?)$/
+
+# Git repository for version control
+output:
+  default: git
+  git:
+    user: Oxidized
+    email: oxidized@supervision.local
+    repo: "/root/.config/oxidized/configs.git"
+
+# Source: PostgreSQL database
+source:
+  default: sql
+  sql:
+    adapter: postgresql
+    database: supervision
+    host: timescaledb
+    username: postgres
+    password: $POSTGRES_PASSWORD
+    table: devices
+    map:
+      name: hostname
+      model: vendor
+      username: snmp_v3_user
+      password: snmp_community
+    query: "SELECT hostname, vendor, device_ip as ip FROM devices WHERE is_active = true"
+
+# Model mappings
+model_map:
+  juniper: junos
+  huawei: vrp
+  cisco: ios
+
+# Groups configuration
+groups:
+  backbone:
+    username: $BACKBONE_USER
+    password: $BACKBONE_PASSWORD
+  mbh:
+    username: $MBH_USER
+    password: $MBH_PASSWORD
+
+# Models
+models:
+  junos:
+    username: admin
+    password: $JUNOS_PASSWORD
+  vrp:
+    username: admin
+    password: $VRP_PASSWORD
+
+# Input methods
+input:
+  default: ssh
+  ssh:
+    secure: false
+
+# Hooks for notifications
+hooks:
+  push_to_remote:
+    type: githubrepo
+    events: [post_store]
+    remote_repo: git@github.com:yourrepo/oxidized-backups.git
+    publickey: /root/.ssh/id_rsa.pub
+    privatekey: /root/.ssh/id_rsa
+
+# Variables
+vars:
+  enable: $ENABLE_PASSWORD
+
+# Crash detection
+crash:
+  directory: "/root/.config/oxidized/crashes"
+  hostnames: false
+
+# Stats
+stats:
+  history_size: 10
+
+# REST API
+rest:
+  host: 0.0.0.0
+  port: 8888
+  
+# Logging  
+log: "/root/.config/oxidized/logs/oxidized.log"
