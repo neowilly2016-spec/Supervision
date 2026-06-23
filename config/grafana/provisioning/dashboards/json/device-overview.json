@@ -1,0 +1,113 @@
+{
+  "dashboard": {
+    "title": "Device Overview - Backbone/MBH",
+    "uid": "device-overview",
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "30s",
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Total Devices",
+        "type": "stat",
+        "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4},
+        "targets": [
+          {
+            "datasource": {"type": "postgres", "uid": "timescaledb"},
+            "rawSql": "SELECT COUNT(DISTINCT device_ip) as count FROM devices",
+            "format": "table"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none"
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Backbone Devices",
+        "type": "stat",
+        "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
+        "targets": [
+          {
+            "datasource": {"type": "postgres", "uid": "timescaledb"},
+            "rawSql": "SELECT COUNT(DISTINCT device_ip) as count FROM devices WHERE role = 'Backbone'",
+            "format": "table"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "MBH Devices",
+        "type": "stat",
+        "gridPos": {"x": 12, "y": 0, "w": 6, "h": 4},
+        "targets": [
+          {
+            "datasource": {"type": "postgres", "uid": "timescaledb"},
+            "rawSql": "SELECT COUNT(DISTINCT device_ip) as count FROM devices WHERE role = 'MBH'",
+            "format": "table"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Device Status",
+        "type": "stat",
+        "gridPos": {"x": 18, "y": 0, "w": 6, "h": 4},
+        "targets": [
+          {
+            "datasource": {"type": "postgres", "uid": "timescaledb"},
+            "rawSql": "SELECT status, COUNT(*) as count FROM devices GROUP BY status",
+            "format": "table"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Device Inventory",
+        "type": "table",
+        "gridPos": {"x": 0, "y": 4, "w": 24, "h": 10},
+        "targets": [
+          {
+            "datasource": {"type": "postgres", "uid": "timescaledb"},
+            "rawSql": "SELECT device_ip, hostname, vendor, model, role, zone, status, last_seen FROM devices ORDER BY last_seen DESC",
+            "format": "table"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Devices by Vendor",
+        "type": "piechart",
+        "gridPos": {"x": 0, "y": 14, "w": 12, "h": 8},
+        "targets": [
+          {
+            "datasource": {"type": "postgres", "uid": "timescaledb"},
+            "rawSql": "SELECT vendor, COUNT(*) as count FROM devices GROUP BY vendor",
+            "format": "table"
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Devices by Zone",
+        "type": "piechart",
+        "gridPos": {"x": 12, "y": 14, "w": 12, "h": 8},
+        "targets": [
+          {
+            "datasource": {"type": "postgres", "uid": "timescaledb"},
+            "rawSql": "SELECT zone, COUNT(*) as count FROM devices GROUP BY zone",
+            "format": "table"
+          }
+        ]
+      }
+    ]
+  },
+  "overwrite": true
+}
