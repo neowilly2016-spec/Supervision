@@ -20,75 +20,82 @@ global:
   # Polling intervals par role
   polling_interval:
     PE: 30      # Provider Edge: 30 sec
-    P: 30       # Core: 30 sec
+    P: 30       # Core: 30 sec  
     AGG: 120    # Aggregation: 2 min
     DIST: 120   # Distribution: 2 min
     default: 300
 
 # ===========================================================
-# Plages reseau a scanner
+# Plages reseau a scanner - TOUS LES SITES
 # ===========================================================
 network_ranges:
-  # Backbone ranges
-  - 10.200.240.0/24  # Juniper SR01/SR02
-  - 10.200.241.0/24  # Juniper SR01/SR02
-  - 10.40.0.0/16     # NE9000/NE40E Backbone
+  # BACKBONE - Juniper Core Routers
+  - 10.200.240.0/24  # SR01/SR02: MUSSR, BMRSR, CNE2SR, ORN1SR, etc.
+  - 10.200.241.0/24  # SR01/SR02 suite
   
-  # MBH ranges
-  - 10.200.1.0/24    # MBH RAN sites
-  - 10.200.2.0/24
-  - 10.200.3.0/24
-  - 10.200.4.0/24
-  - 10.200.5.0/24
-  - 10.200.6.0/24
-  - 10.200.7.0/24
-  - 10.200.8.0/24
-  - 10.200.9.0/24
-  - 10.200.10.0/24
-  - 10.200.11.0/24
-  - 10.200.12.0/24
-  - 10.200.13.0/24
-  - 10.200.14.0/24
-  - 10.200.15.0/24
-  - 10.200.16.0/24
-  - 10.200.17.0/24
-  - 10.200.18.0/24
-  - 10.200.19.0/24
-  - 10.200.20.0/24
-  - 10.200.21.0/24
-  - 10.200.22.0/24
-  - 10.200.23.0/24
-  - 10.200.24.0/24
-  - 10.200.25.0/24
-  - 10.200.26.0/24
-  - 10.200.27.0/24
-  - 10.200.28.0/24
-  - 10.200.29.0/24
-  - 10.200.30.0/24
-  - 10.200.31.0/24
-  - 10.200.32.0/24
-  - 10.200.33.0/24
-  - 10.200.34.0/24
-  - 10.200.35.0/24
-  - 10.200.36.0/24
-  - 10.200.37.0/24
-  - 10.200.38.0/24
-  - 10.200.39.0/24
-  - 10.200.40.0/24
-  - 10.200.41.0/24
-  - 10.200.42.0/24
-  - 10.200.43.0/24
-  - 10.200.44.0/24
-  - 10.200.45.0/24
-  - 10.200.46.0/24
-  - 10.44.0.0/16     # NE8000 MBH
+  # BACKBONE - Huawei NE9000/NE40E
+  - 10.40.0.0/16     # ORG-IGW-NE9000, TOG-NE40E, etc.
   
-  # Mixed range (classification by hostname/model)
+  # MIXED - Classification conditionnelle
   - 10.42.0.0/16     # NE9000/NE40E=Backbone; ASG/ASBR/NE8000=MBH
+  
+  # MBH - Sites RAN Juniper  
+  - 10.200.1.0/24    # RAN_ADR (Adrar)
+  - 10.200.2.0/24    # RAN_AID (Ain Defla)
+  - 10.200.3.0/24    # RAN_BBA (Bordj Bou Arreridj)
+  - 10.200.4.0/24    # RAN_BBY (Bab-El-Oued)
+  - 10.200.5.0/24    # RAN_BDL (Blida)
+  - 10.200.6.0/24    # RAN_BEN (Beni Ouartilane)
+  - 10.200.7.0/24    # RAN_BJA (Bejaia)
+  - 10.200.8.0/24    # RAN_BLD (Blida)
+  - 10.200.9.0/24    # RAN_BMA (Boumerdes)
+  - 10.200.10.0/24   # RAN_BSK (Biskra)
+  - 10.200.11.0/24   # RAN_CHL (Chlef)
+  - 10.200.12.0/24   # RAN_CNE (Constantine)
+  - 10.200.13.0/24   # RAN_EBA (El Bayadh)
+  - 10.200.14.0/24   # RAN_TRT (Tiaret)
+  - 10.200.15.0/24   # RAN_DJE (Djanet)
+  - 10.200.16.0/24   # RAN_DRA (Adrar)
+  - 10.200.17.0/24   # RAN_ELD (El Oued)
+  - 10.200.18.0/24   # RAN_GDA (Guelma)
+  - 10.200.19.0/24   # RAN_GLM (Guelma)
+  - 10.200.20.0/24   # RAN_ILZ (Illizi)
+  - 10.200.21.0/24   # RAN_KHA (Khenchela)
+  - 10.200.22.0/24   # RAN_LAG (Laghouat)
+  - 10.200.23.0/24   # RAN_MDA (Medea)
+  - 10.200.24.0/24   # RAN_MGH (Maghnia)
+  - 10.200.25.0/24   # RAN_MIL (Mila)
+  - 10.200.26.0/24   # RAN_MSL (M'Sila)
+  - 10.200.27.0/24   # RAN_MUA (Mostaganem)
+  - 10.200.28.0/24   # RAN_NAM (Naama)
+  - 10.200.29.0/24   # RAN_OGX (Ouargla)
+  - 10.200.30.0/24   # RAN_ORN (Oran)
+  - 10.200.31.0/24   # RAN_OUA (Ouargla)
+  - 10.200.32.0/24   # RAN_RLZ (Relizane)
+  - 10.200.33.0/24   # RAN_SAH (Saida)
+  - 10.200.34.0/24   # RAN_SET (Setif)
+  - 10.200.35.0/24   # RAN_SBA (Sidi Bel Abbes)
+  - 10.200.36.0/24   # RAN_SKD (Skikda)
+  - 10.200.37.0/24   # RAN_SKH (Souk Ahras)
+  - 10.200.38.0/24   # RAN_TAM (Tamanrasset)
+  - 10.200.39.0/24   # RAN_TBS (Tebessa)
+  - 10.200.40.0/24   # RAN_TIM (Timimoun)
+  - 10.200.41.0/24   # RAN_TIN (Tindouf)
+  - 10.200.42.0/24   # RAN_TIP (Tipaza)
+  - 10.200.43.0/24   # RAN_TIZ (Tizi Ouzou)
+  - 10.200.44.0/24   # RAN_TLE (Tlemcen)
+  - 10.200.45.0/24   # RAN_TOG (Touggourt)
+  - 10.200.46.0/24   # RAN_ZAB (Zaafrane)
+  
+  # MBH - Huawei ASG/ASBR
+  - 10.44.0.0/24     # ASG/ASBR principaux
+  - 10.44.50.0/24    # ASG secondaires
+  - 10.44.100.0/24   # ASG distribution
+  - 10.44.101.0/24   # ASG distribution suite
 
 # ===========================================================
 # Classification automatique Backbone vs MBH
-# Base sur hostname, sysDescr, et plages IP
+# Base sur hostname, sysDescr, IP et modele
 # ===========================================================
 zone_classification:
   
@@ -97,24 +104,70 @@ zone_classification:
     
     # Patterns hostname pour Backbone
     hostname_patterns:
-      - ".*SR01$"           # Juniper spine routers
-      - ".*SR02$"
-      - "(?!.*RAN_).*SR01"  # SR01/SR02 sans prefix RAN_
-      - "(?!.*RAN_).*SR02"
+      # Juniper Spine Routers (10.200.240.x/241.x)
+      - "^MUSSR0[12]$"         # Musee SR01/SR02
+      - "^BMRSR0[12]$"         # Beaumarchais SR01/SR02
+      - "^CNE[12]SR0[12]$"     # Constantine SR01/SR02
+      - "^ORN[12]SR0[12]$"     # Oran SR01/SR02
+      - "^OGASR0[12]$"         # Ouargla SR01/SR02
+      - "^BHRSR0[12]$"         # Bechar SR01/SR02
+      - "^TIZSR0[12]$"         # Tizi Ouzou SR01/SR02
+      - "^ANB[12]SR0[12]$"     # Annaba SR01/SR02
+      - "^BMR[12]SR0[12]$"     # Beaumarchais SR01/SR02
+      - "^ALG[1-3]SR0[12]$"    # Alger SR01/SR02
+      - "^SETSR0[12]$"         # Setif SR01/SR02
+      - "^BJASR0[12]$"         # Bejaia SR01/SR02
+      - "^BSKSR0[12]$"         # Biskra SR01/SR02
+      - "^BLDSR0[12]$"         # Blida SR01/SR02
+      - "^OUMSR0[12]$"         # Oum El Bouaghi SR01/SR02
+      - "^CHLSR0[12]$"         # Chlef SR01/SR02
+      - "^LAGSR0[12]$"         # Laghouat SR01/SR02
+      - "^BBDSR0[12]$"         # Bordj Bou Arreridj SR01/SR02
+      - "^BOUSR0[12]$"         # Bouira SR01/SR02
+      - "^TMNSR0[12]$"         # Tamanrasset SR01/SR02
+      - "^TEBSR0[12]$"         # Tebessa SR01/SR02
+      - "^TLESR0[12]$"         # Tlemcen SR01/SR02
+      - "^TRTSR0[12]$"         # Tiaret SR01/SR02
+      - "^TOGSR0[12]$"         # Touggourt SR01/SR02
+      - "^ELDSR0[12]$"         # El Oued SR01/SR02
+      - "^KHASR0[12]$"         # Khenchela SR01/SR02
+      - "^SOUSR0[12]$"         # Souk Ahras SR01/SR02
+      - "^TIPSR0[12]$"         # Tipaza SR01/SR02
+      - "^MILSR0[12]$"         # Mila SR01/SR02
+      - "^AIDSR0[12]$"         # Ain Defla SR01/SR02
+      - "^NAASR0[12]$"         # Naama SR01/SR02
+      - "^TIMSR0[12]$"         # Timimoun SR01/SR02
+      - "^BORDSR0[12]$"        # Bordj SR01/SR02
+      - "^EBDSR0[12]$"         # El Bayadh SR01/SR02
+      - "^ILLSR0[12]$"         # Illizi SR01/SR02
+      - "^EBCSR0[12]$"         # El Bayadh Centre SR01/SR02
+      - "^OUASR0[12]$"         # Ouargla SR01/SR02
+      - "^TOUSR0[12]$"         # Touggourt SR01/SR02
+      - "^METSR0[12]$"         # Metlili SR01/SR02
+      - "^GRDSR0[12]$"         # Ghardaia SR01/SR02
+      - "^ADZSR0[12]$"         # Adrar SR01/SR02
+      - "^DJNSR0[12]$"         # Djanet SR01/SR02
+      
+      # Pattern generique: *SR01/SR02 sans RAN_
+      - "(?!RAN_).*SR0[12]$"
+      
+      # Huawei IGW NE9000 (10.40.x, 10.42.x)
+      - ".*-IGW-NE9000.*"      # Internet Gateway
+      - ".*NE9000.*"
     
     # Patterns sysDescr pour Backbone
     sysDescr_patterns:
-      - ".*MX960.*"
-      - ".*NE9000.*"        # Huawei NE9000
-      - ".*NE40E.*"         # Huawei NE40E
+      - ".*MX960.*"            # Juniper MX960
+      - ".*NE9000.*"           # Huawei NE9000
+      - ".*NE40E.*"            # Huawei NE40E
     
     # Plages IP Backbone
     ip_ranges:
-      - "10.200.240.0/24"
-      - "10.200.241.0/24"
-      - "10.40.0.0/16"
+      - "10.200.240.0/24"     # Juniper SR core
+      - "10.200.241.0/24"     # Juniper SR core
+      - "10.40.0.0/16"         # Huawei NE9000/NE40E
     
-    # Classification IP 10.42 par modele
+    # Classification IP 10.42 par modele (conditionnelle)
     ip_conditional:
       range: "10.42.0.0/16"
       include_models:
@@ -135,73 +188,110 @@ zone_classification:
         - "P"     # Core
   
   mbh:
-    description: "Mobile Backhaul - Huawei NE8000 et sites RAN"
+    description: "Mobile Backhaul - Sites RAN Juniper et Huawei ASG/ASBR"
     
     # Patterns hostname pour MBH
     hostname_patterns:
-      - "RAN_.*"           # Tous les sites RAN
-      - ".*ASG.*"          # Aggregation Service Gateway
-      - ".*ASBR.*"         # AS Border Router
+      # Sites RAN Juniper (10.200.{1-46}.x)
+      - "^RAN_.*"                     # Tous les sites RAN
+      - "^RAN_ADR-.*-SR0[12]$"        # Adrar
+      - "^RAN_AID-.*-SR0[12]$"        # Ain Defla
+      - "^RAN_BBA-.*-SR0[12]$"        # Bordj Bou Arreridj
+      - "^RAN_BJA-.*-SR0[12]$"        # Bejaia
+      - "^RAN_BLD-.*-SR0[12]$"        # Blida
+      - "^RAN_BMA-.*-SR0[12]$"        # Boumerdes
+      - "^RAN_BSK-.*-SR0[12]$"        # Biskra
+      - "^RAN_CHL-.*-SR0[12]$"        # Chlef
+      - "^RAN_CNE-.*-SR0[12]$"        # Constantine
+      - "^RAN_EBA-.*-SR0[12]$"        # El Bayadh
+      - "^RAN_ELD-.*-SR0[12]$"        # El Oued
+      - "^RAN_GLM-.*-SR0[12]$"        # Guelma
+      - "^RAN_ILZ-.*-SR0[12]$"        # Illizi
+      - "^RAN_KHA-.*-SR0[12]$"        # Khenchela
+      - "^RAN_LAG-.*-SR0[12]$"        # Laghouat
+      - "^RAN_MDA-.*-SR0[12]$"        # Medea
+      - "^RAN_MIL-.*-SR0[12]$"        # Mila
+      - "^RAN_MSL-.*-SR0[12]$"        # M'Sila
+      - "^RAN_ORN-.*-SR0[12]$"        # Oran
+      - "^RAN_OUA-.*-SR0[12]$"        # Ouargla
+      - "^RAN_RLZ-.*-SR0[12]$"        # Relizane
+      - "^RAN_SBA-.*-SR0[12]$"        # Sidi Bel Abbes
+      - "^RAN_SET-.*-SR0[12]$"        # Setif
+      - "^RAN_SKD-.*-SR0[12]$"        # Skikda
+      - "^RAN_TAM-.*-SR0[12]$"        # Tamanrasset
+      - "^RAN_TBS-.*-SR0[12]$"        # Tebessa
+      - "^RAN_TIM-.*-SR0[12]$"        # Timimoun
+      - "^RAN_TRT-.*-SR0[12]$"        # Tiaret
+      
+      # Sites Huawei ASG/ASBR (10.44.x, 10.42.x)
+      - ".*-ASG-.*"                   # Aggregation Service Gateway
+      - ".*-ASBR-.*"                  # AS Border Router
     
     # Patterns sysDescr pour MBH
     sysDescr_patterns:
-      - ".*NE8000.*"       # Huawei NE8000 = MBH
-      - ".*NE5000.*"
-      - ".*MX480.*"
-      - ".*MX204.*"
-      - ".*MX104.*"
+      - ".*NE8000.*"                  # Huawei NE8000 = MBH
+      - ".*NE5000.*"                  # Huawei NE5000
+      - ".*MX480.*"                   # Juniper MX480
+      - ".*MX204.*"                   # Juniper MX204
+      - ".*MX104.*"                   # Juniper MX104
     
     # Plages IP MBH
     ip_ranges:
-      - "10.200.1.0/24"
-      - "10.200.2.0/24"
-      - "10.200.3.0/24"
-      - "10.200.4.0/24"
-      - "10.200.5.0/24"
-      - "10.200.6.0/24"
-      - "10.200.7.0/24"
-      - "10.200.8.0/24"
-      - "10.200.9.0/24"
-      - "10.200.10.0/24"
-      - "10.200.11.0/24"
-      - "10.200.12.0/24"
-      - "10.200.13.0/24"
-      - "10.200.14.0/24"
-      - "10.200.15.0/24"
-      - "10.200.16.0/24"
-      - "10.200.17.0/24"
-      - "10.200.18.0/24"
-      - "10.200.19.0/24"
-      - "10.200.20.0/24"
-      - "10.200.21.0/24"
-      - "10.200.22.0/24"
-      - "10.200.23.0/24"
-      - "10.200.24.0/24"
-      - "10.200.25.0/24"
-      - "10.200.26.0/24"
-      - "10.200.27.0/24"
-      - "10.200.28.0/24"
-      - "10.200.29.0/24"
-      - "10.200.30.0/24"
-      - "10.200.31.0/24"
-      - "10.200.32.0/24"
-      - "10.200.33.0/24"
-      - "10.200.34.0/24"
-      - "10.200.35.0/24"
-      - "10.200.36.0/24"
-      - "10.200.37.0/24"
-      - "10.200.38.0/24"
-      - "10.200.39.0/24"
-      - "10.200.40.0/24"
-      - "10.200.41.0/24"
-      - "10.200.42.0/24"
-      - "10.200.43.0/24"
-      - "10.200.44.0/24"
-      - "10.200.45.0/24"
-      - "10.200.46.0/24"
-      - "10.44.0.0/16"
+      # Sites RAN Juniper
+      - "10.200.1.0/24"    # ADR - Adrar
+      - "10.200.2.0/24"    # AID - Ain Defla
+      - "10.200.3.0/24"    # BBA - Bordj Bou Arreridj
+      - "10.200.4.0/24"    # BBY - Bab-El-Oued
+      - "10.200.5.0/24"    # BDL - Blida
+      - "10.200.6.0/24"    # BEN - Beni Ouartilane
+      - "10.200.7.0/24"    # BJA - Bejaia
+      - "10.200.8.0/24"    # BLD - Blida
+      - "10.200.9.0/24"    # BMA - Boumerdes
+      - "10.200.10.0/24"   # BSK - Biskra
+      - "10.200.11.0/24"   # CHL - Chlef
+      - "10.200.12.0/24"   # CNE - Constantine
+      - "10.200.13.0/24"   # EBA - El Bayadh
+      - "10.200.14.0/24"   # TRT - Tiaret
+      - "10.200.15.0/24"   # DJE - Djanet
+      - "10.200.16.0/24"   # DRA - Adrar
+      - "10.200.17.0/24"   # ELD - El Oued
+      - "10.200.18.0/24"   # GDA - Guelma
+      - "10.200.19.0/24"   # GLM - Guelma
+      - "10.200.20.0/24"   # ILZ - Illizi
+      - "10.200.21.0/24"   # KHA - Khenchela
+      - "10.200.22.0/24"   # LAG - Laghouat
+      - "10.200.23.0/24"   # MDA - Medea
+      - "10.200.24.0/24"   # MGH - Maghnia
+      - "10.200.25.0/24"   # MIL - Mila
+      - "10.200.26.0/24"   # MSL - M'Sila
+      - "10.200.27.0/24"   # MUA - Mostaganem
+      - "10.200.28.0/24"   # NAM - Naama
+      - "10.200.29.0/24"   # OGX - Ouargla
+      - "10.200.30.0/24"   # ORN - Oran
+      - "10.200.31.0/24"   # OUA - Ouargla
+      - "10.200.32.0/24"   # RLZ - Relizane
+      - "10.200.33.0/24"   # SAH - Saida
+      - "10.200.34.0/24"   # SET - Setif
+      - "10.200.35.0/24"   # SBA - Sidi Bel Abbes
+      - "10.200.36.0/24"   # SKD - Skikda
+      - "10.200.37.0/24"   # SKH - Souk Ahras
+      - "10.200.38.0/24"   # TAM - Tamanrasset
+      - "10.200.39.0/24"   # TBS - Tebessa
+      - "10.200.40.0/24"   # TIM - Timimoun
+      - "10.200.41.0/24"   # TIN - Tindouf
+      - "10.200.42.0/24"   # TIP - Tipaza
+      - "10.200.43.0/24"   # TIZ - Tizi Ouzou
+      - "10.200.44.0/24"   # TLE - Tlemcen
+      - "10.200.45.0/24"   # TOG - Touggourt
+      - "10.200.46.0/24"   # ZAB - Zaafrane
+      
+      # Sites Huawei ASG/ASBR
+      - "10.44.0.0/24"     # ASG/ASBR principaux
+      - "10.44.50.0/24"    # ASG secondaires
+      - "10.44.100.0/24"   # ASG distribution
+      - "10.44.101.0/24"   # ASG distribution suite
     
-    # Classification IP 10.42 par modele
+    # Classification IP 10.42 par modele (conditionnelle)
     ip_conditional:
       range: "10.42.0.0/16"
       include_models:
@@ -232,8 +322,8 @@ role_classification:
       - sysDescr: ".*mx960.*"
       - sysDescr: ".*ne9000.*"
       - sysDescr: ".*ne40e.*"
-      - hostname: ".*SR01$"
-      - hostname: ".*SR02$"
+      - hostname: ".*SR0[12]$"        # Tous les SR dans backbone
+      - hostname: ".*-IGW-.*"         # Internet Gateway
     attributes:
       - has_bgp: true
       - has_mpls: true
@@ -256,8 +346,9 @@ role_classification:
       - sysDescr: ".*mx204.*"
       - sysDescr: ".*ne8000.*"
       - sysDescr: ".*ne5000.*"
-      - hostname: ".*ASG.*"
-      - hostname: ".*ASBR.*"
+      - hostname: ".*-ASG-.*"         # Aggregation Service Gateway
+      - hostname: ".*-ASBR-.*"        # AS Border Router
+      - hostname: "^RAN_.*-SR0[12]$"  # Sites RAN
     attributes:
       - has_isis: true
       - has_mpls: true
@@ -268,6 +359,6 @@ role_classification:
     patterns:
       - sysDescr: ".*mx104.*"
       - sysDescr: ".*ne.*dist.*"
-      - hostname: "RAN_.*"
+      - hostname: "^RAN_.*"
     attributes:
       - zone: "mbh"
