@@ -300,6 +300,185 @@ def get_optical_summary(device_id):
         logger.error(f"Error fetching optical summary: {e}")
         return jsonify({'error': str(e)}), 500
 
+
+# =============================================================
+# IPAM Endpoints - VLANs
+# =============================================================
+
+@app.route('/api/ipam/vlans', methods=['GET'])
+def get_vlans():
+    """List all VLANs with optional filtering by site or status"""
+    site = request.args.get('site')
+    status = request.args.get('status', 'active')
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        query = "SELECT * FROM vlans WHERE status = %s"
+        params = [status]
+        if site:
+            query += " AND site = %s"
+            params.append(site)
+        query += " ORDER BY vid ASC"
+        cur.execute(query, params)
+        vlans = cur.fetchall()
+        cur.close()
+        conn.close()
+        return jsonify(vlans)
+    except Exception as e:
+        logger.error(f"Error fetching VLANs: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/ipam/vlans/<int:vlan_id>', methods=['GET'])
+def get_vlan(vlan_id):
+    """Get a single VLAN by ID"""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM vlans WHERE id = %s", (vlan_id,))
+        vlan = cur.fetchone()
+        cur.close()
+        conn.close()
+        if not vlan:
+            return jsonify({'error': 'VLAN not found'}), 404
+        return jsonify(vlan)
+    except Exception as e:
+        logger.error(f"Error fetching VLAN {vlan_id}: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/ipam/vlans', methods=['POST'])
+def create_vlan():
+    """Create or update a VLAN entry"""
+    data = request.get_json()
+    if not data or 'vid' not in data or 'name' not in data:
+        return jsonify({'error': 'vid and name are required'}), 400
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO vlans (vid, name, description, site, group_name, status)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT (vid, site) DO UPDATE SET
+                name = EXCLUDED.name,
+                description = EXCLUDED.description,
+                group_name = EXCLUDED.group_name,
+                status = EXCLUDED.status,
+                last_seen = NOW()
+            RETURNING *
+        """, (
+            data['vid'],
+            data['name'],
+            data.get('description', ''),
+            data.get('site', ''),
+            data.get('group_name', ''),
+            data.get('status', 'active')
+        ))
+        vlan = cur.fetchone()
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify(vlan), 201
+    except Exception as e:
+        logger.error(f"Error creating VLAN: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+# =============================================================
+# IPAM Endpoints - VRFs
+# =============================================================
+
+@app.route('/api/ipam/vrfs', methods=['GET'])
+def get_vrfs():
+    """List all VRFs, optionally filtered by device_id"""
+    device_id = request.args.get('device_id')
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        if device_id:
+            cur.execute(
+                "SELECT v.*, d.hostname FROM vrfs v "
+                "JOIN devices d ON v.device_id = d.id "
+                "WHERE v.device_id = %s ORDER BY v.name",
+                (device_id,)
+            )
+        else:
+            cur.execute(
+                "SELECT v.*, d.hostname FROM vrfs v "
+                "JOIN devices d ON v.device_id = d.id "
+                "ORDER BY d.hostname, v.name"
+            )
+        vrfs = cur.fetchall()
+        cur.close()
+        conn.close()
+        return jsonify(vrfs)
+    except Exception as e:
+        logger.error(f"Error fetching VRFs: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/ipam/vrfs/<int:vrf_id>', methods=['GET'])
+def get_vrf(vrf_id):
+    """Get a single VRF with its VLAN mappings"""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT v.*, d.hostname FROM vrfs v "
+            "JOIN devices d ON v.device_id = d.id "
+            "WHERE v.id = %s",
+            (vrf_id,)
+        )
+        vrf = cur.fetchone()
+        if not vrf:
+            cur.close()
+            conn.close()
+            return jsonify({'error': 'VRF not found'}), 404
+        # Get associated VLANs
+        cur.execute("""
+            SELECT vl.* FROM vlans vl
+            JOIN vlan_vrf_mapping m ON vl.id = m.vlan_id
+            WHERE m.vrf_id = %s
+        """, (vrf_id,))
+        vrf['vlans'] = cur.fetchall()
+        cur.close()
+        conn.close()
+        return jsonify(vrf)
+    except Exception as e:
+        logger.error(f"Error fetching VRF {vrf_id}: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/ipam/vlan-vrf-mapping', methods=['GET'])
+def get_vlan_vrf_mapping():
+    """Get all VLAN-to-VRF mappings with device context"""
+    device_id = request.args.get('device_id')
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        query = """
+            SELECT m.id, m.device_id, d.hostname,
+                   vl.vid, vl.name AS vlan_name, vl.site,
+                   vr.name AS vrf_name, vr.rd
+            FROM vlan_vrf_mapping m
+            JOIN devices d ON m.device_id = d.id
+            JOIN vlans vl ON m.vlan_id = vl.id
+            JOIN vrfs vr ON m.vrf_id = vr.id
+        """
+        params = []
+        if device_id:
+            query += " WHERE m.device_id = %s"
+            params.append(device_id)
+        query += " ORDER BY d.hostname, vr.name, vl.vid"
+        cur.execute(query, params)
+        mappings = cur.fetchall()
+        cur.close()
+        conn.close()
+        return jsonify(mappings)
+    except Exception as e:
+        logger.error(f"Error fetching VLAN-VRF mappings: {e}")
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     port = int(os.getenv('APP_PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
