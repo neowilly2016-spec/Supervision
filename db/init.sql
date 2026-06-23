@@ -220,6 +220,25 @@ CREATE TABLE IF NOT EXISTS device_metrics (
 SELECT create_hypertable('device_metrics', 'time', if_not_exists => TRUE);
 
 -- ============================================================
+-- TABLE: optical_metrics (TimescaleDB hypertable)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS optical_metrics (
+    time TIMESTAMPTZ NOT NULL,
+    device_id UUID NOT NULL,
+    if_index INTEGER NOT NULL,
+    if_name VARCHAR(128),
+    rx_power_dbm NUMERIC(8,3),      -- Optical RX power in dBm
+    tx_power_dbm NUMERIC(8,3),      -- Optical TX power in dBm
+    temperature_celsius NUMERIC(6,2), -- Module temperature in °C
+    bias_current_ma NUMERIC(6,2),   -- Laser bias current in mA
+    voltage_v NUMERIC(5,2)          -- Supply voltage in V
+);
+
+SELECT create_hypertable('optical_metrics', 'time', if_not_exists => TRUE);
+CREATE INDEX IF NOT EXISTS idx_optical_metrics_device ON optical_metrics (device_id, time DESC);
+CREATE INDEX IF NOT EXISTS idx_optical_metrics_interface ON optical_metrics (device_id, if_index, time DESC);
+
+-- ============================================================
 -- Vues utiles
 -- ============================================================
 
