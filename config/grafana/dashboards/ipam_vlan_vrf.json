@@ -1,0 +1,214 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "annotations": {
+    "list": []
+  },
+  "description": "IPAM - VLAN and VRF topology overview",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "supervision_pg"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 50 },
+              { "color": "red", "value": 100 }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "id": 1,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Total VLANs",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "supervision_pg" },
+          "rawSql": "SELECT COUNT(*) AS value FROM vlans WHERE status = 'active';",
+          "refId": "A",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "supervision_pg"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "blue", "value": null }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "id": 2,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "Total VRFs",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "supervision_pg" },
+          "rawSql": "SELECT COUNT(*) AS value FROM vrfs;",
+          "refId": "A",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "supervision_pg"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "purple", "value": null }
+            ]
+          }
+        }
+      },
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "id": 3,
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "title": "VLAN-VRF Mappings",
+      "type": "stat",
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "supervision_pg" },
+          "rawSql": "SELECT COUNT(*) AS value FROM vlan_vrf_mapping;",
+          "refId": "A",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "supervision_pg"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "width": 80 }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "status" },
+            "properties": [
+              {
+                "id": "custom.displayMode",
+                "value": "color-background"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  { "options": { "active": { "color": "green", "index": 0 } }, "type": "value" },
+                  { "options": { "deprecated": { "color": "red", "index": 1 } }, "type": "value" }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 12, "w": 14, "x": 0, "y": 4 },
+      "id": 4,
+      "options": { "sortBy": [{ "desc": false, "displayName": "vid" }] },
+      "title": "VLAN Registry",
+      "type": "table",
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "supervision_pg" },
+          "rawSql": "SELECT vid, name, description, site, group_name, status, last_seen FROM vlans ORDER BY vid;",
+          "refId": "A",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "supervision_pg"
+      },
+      "fieldConfig": { "defaults": {} },
+      "gridPos": { "h": 12, "w": 10, "x": 14, "y": 4 },
+      "id": 5,
+      "title": "VRF Registry",
+      "type": "table",
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "supervision_pg" },
+          "rawSql": "SELECT d.hostname, v.name AS vrf_name, v.rd, v.description, v.last_seen FROM vrfs v JOIN devices d ON v.device_id = d.id ORDER BY d.hostname, v.name;",
+          "refId": "A",
+          "format": "table"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "supervision_pg"
+      },
+      "fieldConfig": { "defaults": {} },
+      "gridPos": { "h": 12, "w": 24, "x": 0, "y": 16 },
+      "id": 6,
+      "title": "VLAN to VRF Mappings (per Device)",
+      "type": "table",
+      "targets": [
+        {
+          "datasource": { "type": "postgres", "uid": "supervision_pg" },
+          "rawSql": "SELECT d.hostname, vl.vid, vl.name AS vlan_name, vl.site, vr.name AS vrf_name, vr.rd FROM vlan_vrf_mapping m JOIN devices d ON m.device_id = d.id JOIN vlans vl ON m.vlan_id = vl.id JOIN vrfs vr ON m.vrf_id = vr.id ORDER BY d.hostname, vr.name, vl.vid;",
+          "refId": "A",
+          "format": "table"
+        }
+      ]
+    }
+  ],
+  "refresh": "5m",
+  "schemaVersion": 38,
+  "tags": ["ipam", "vlan", "vrf", "network"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "datasource": { "type": "postgres", "uid": "supervision_pg" },
+        "definition": "SELECT DISTINCT site FROM vlans WHERE site IS NOT NULL ORDER BY site",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Site",
+        "multi": false,
+        "name": "site",
+        "options": [],
+        "query": "SELECT DISTINCT site FROM vlans WHERE site IS NOT NULL ORDER BY site",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": { "from": "now-24h", "to": "now" },
+  "timepicker": {},
+  "title": "IPAM - VLAN & VRF Overview",
+  "uid": "ipam-vlan-vrf",
+  "version": 1
+}
