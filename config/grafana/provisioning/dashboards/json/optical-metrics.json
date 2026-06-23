@@ -1,0 +1,87 @@
+{
+  "dashboard": {
+    "title": "Optical Metrics - Backbone/MBH",
+    "uid": "optical-metrics",
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "30s",
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "TX Power Levels",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8},
+        "targets": [
+          {
+            "datasource": {"type": "postgres", "uid": "timescaledb"},
+            "rawSql": "SELECT time, device_hostname, interface_name, tx_power FROM optical_metrics WHERE $__timeFilter(time) ORDER BY time",
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "dBm",
+            "custom": {"lineWidth": 1}
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "RX Power Levels",
+        "type": "timeseries",
+        "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8},
+        "targets": [
+          {
+            "datasource": {"type": "postgres", "uid": "timescaledb"},
+            "rawSql": "SELECT time, device_hostname, interface_name, rx_power FROM optical_metrics WHERE $__timeFilter(time) ORDER BY time",
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "dBm",
+            "custom": {"lineWidth": 1}
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "Temperature Monitoring",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 8, "w": 12, "h": 8},
+        "targets": [
+          {
+            "datasource": {"type": "postgres", "uid": "timescaledb"},
+            "rawSql": "SELECT time, device_hostname, interface_name, temperature FROM optical_metrics WHERE $__timeFilter(time) ORDER BY time",
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "celsius",
+            "custom": {"lineWidth": 1}
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Current Optical Interfaces",
+        "type": "table",
+        "gridPos": {"x": 12, "y": 8, "w": 12, "h": 8},
+        "targets": [
+          {
+            "datasource": {"type": "postgres", "uid": "timescaledb"},
+            "rawSql": "SELECT device_hostname, interface_name, tx_power, rx_power, temperature, time FROM optical_metrics WHERE time > NOW() - INTERVAL '5 minutes' ORDER BY time DESC",
+            "format": "table"
+          }
+        }
+      }
+    ]
+  },
+  "overwrite": true
+}
