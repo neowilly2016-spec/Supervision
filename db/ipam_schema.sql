@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS vlans (
     site VARCHAR(100),  -- backbone, mbh_zone1, mbh_zone2
     group_name VARCHAR(100),  -- VLAN group (ex: backbone, mbh, management)
     status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'reserved', 'deprecated')),
+    last_seen TIMESTAMPTZ DEFAULT NOW(),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(vid, site)
