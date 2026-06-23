@@ -7,7 +7,7 @@
 
 ### 1.1 Vue d'ensemble
 
-Cette solution de monitoring réseau est conçue pour superviser l'infrastructure Backbone (Juniper MX960, Huawei NE9000) et Mobile Backhaul (Juniper MX480/MX204/MX104, Huawei NE5000E) avec une approche haute performance inspirée de LibreNMS.
+Cette solution de monitoring réseau est conçue pour superviser l'infrastructure Backbone (Juniper MX960, Huawei NE9000) et Mobile Backhaul (Juniper MX480/MX204/MX104, NetEngine 8000 M14, ATN910D-A, ATN950C, ATN950D, CX600-X16A, CX600-X2-M8A, CX600-X3, CX600-X3A, CX600-X8A) avec une approche haute performance inspirée de LibreNMS.
 ### 1.2 Fonctionnalités principales
 
 - **Auto-découverte dynamique** : SNMP, LLDP, BGP-LS pour découverte automatique des équipements
