@@ -1,0 +1,162 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "annotations": {"list": []},
+  "description": "IPAM - IP Prefixes enrichis avec VLAN et VRF",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {"type": "postgres", "uid": "supervision_pg"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{"color": "green", "value": null}]
+          }
+        }
+      },
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+      "id": 1,
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}},
+      "title": "Total Prefixes",
+      "type": "stat",
+      "targets": [{
+        "datasource": {"type": "postgres", "uid": "supervision_pg"},
+        "rawSql": "SELECT COUNT(*) AS value FROM ip_prefixes WHERE status = 'active';",
+        "refId": "A",
+        "format": "table"
+      }]
+    },
+    {
+      "datasource": {"type": "postgres", "uid": "supervision_pg"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{"color": "blue", "value": null}]
+          }
+        }
+      },
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0},
+      "id": 2,
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}},
+      "title": "Enriched with VLAN",
+      "type": "stat",
+      "targets": [{
+        "datasource": {"type": "postgres", "uid": "supervision_pg"},
+        "rawSql": "SELECT COUNT(*) AS value FROM ip_prefixes WHERE vlan_id IS NOT NULL;",
+        "refId": "A",
+        "format": "table"
+      }]
+    },
+    {
+      "datasource": {"type": "postgres", "uid": "supervision_pg"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{"color": "purple", "value": null}]
+          }
+        }
+      },
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0},
+      "id": 3,
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}},
+      "title": "Enriched with VRF",
+      "type": "stat",
+      "targets": [{
+        "datasource": {"type": "postgres", "uid": "supervision_pg"},
+        "rawSql": "SELECT COUNT(*) AS value FROM ip_prefixes WHERE vrf_id IS NOT NULL;",
+        "refId": "A",
+        "format": "table"
+      }]
+    },
+    {
+      "datasource": {"type": "postgres", "uid": "supervision_pg"},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{"color": "orange", "value": null}]
+          },
+          "unit": "percent"
+        }
+      },
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0},
+      "id": 4,
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}},
+      "title": "Avg Utilization",
+      "type": "stat",
+      "targets": [{
+        "datasource": {"type": "postgres", "uid": "supervision_pg"},
+        "rawSql": "SELECT AVG(utilization) AS value FROM ip_prefixes WHERE status = 'active';",
+        "refId": "A",
+        "format": "table"
+      }]
+    },
+    {
+      "datasource": {"type": "postgres", "uid": "supervision_pg"},
+      "fieldConfig": {"defaults": {}},
+      "gridPos": {"h": 14, "w": 24, "x": 0, "y": 4},
+      "id": 5,
+      "title": "IP Prefixes with VLAN & VRF Enrichment",
+      "type": "table",
+      "targets": [{
+        "datasource": {"type": "postgres", "uid": "supervision_pg"},
+        "rawSql": "SELECT p.prefix, p.prefix_length, p.status, p.is_pool, p.utilization, vl.vid, vl.name AS vlan_name, vl.site, vr.name AS vrf_name, vr.rd FROM ip_prefixes p LEFT JOIN vlans vl ON p.vlan_id = vl.id LEFT JOIN vrfs vr ON p.vrf_id = vr.id WHERE p.status = 'active' ORDER BY p.prefix;",
+        "refId": "A",
+        "format": "table"
+      }]
+    },
+    {
+      "datasource": {"type": "postgres", "uid": "supervision_pg"},
+      "fieldConfig": {"defaults": {}},
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 18},
+      "id": 6,
+      "title": "Prefixes by VLAN (Top 10)",
+      "type": "bargauge",
+      "targets": [{
+        "datasource": {"type": "postgres", "uid": "supervision_pg"},
+        "rawSql": "SELECT vl.name AS metric, COUNT(p.id) AS value FROM ip_prefixes p JOIN vlans vl ON p.vlan_id = vl.id WHERE p.status = 'active' GROUP BY vl.name ORDER BY value DESC LIMIT 10;",
+        "refId": "A",
+        "format": "table"
+      }],
+      "options": {"orientation": "horizontal", "displayMode": "gradient"}
+    }
+  ],
+  "refresh": "5m",
+  "schemaVersion": 38,
+  "tags": ["ipam", "prefixes", "enrichment"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "datasource": {"type": "postgres", "uid": "supervision_pg"},
+        "definition": "SELECT DISTINCT site FROM vlans WHERE site IS NOT NULL ORDER BY site",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Site",
+        "multi": false,
+        "name": "site",
+        "options": [],
+        "query": "SELECT DISTINCT site FROM vlans WHERE site IS NOT NULL ORDER BY site",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {"from": "now-24h", "to": "now"},
+  "timepicker": {},
+  "title": "IPAM - IP Prefixes Enriched",
+  "uid": "ipam-prefixes-enriched",
+  "version": 1
+}
