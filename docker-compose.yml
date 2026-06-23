@@ -179,6 +179,40 @@ services:
     networks:
       - supervision_net
 
+  # VLAN Discovery Collector (IPAM)
+  vlan_collector:
+    build: ./backend
+    container_name: supervision_vlan_collector
+    restart: unless-stopped
+    command: python /app/collectors/vlan_discovery_collector.py
+    env_file: .env
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - supervision_net
+
+  # VRF Detection Collector (IPAM)
+  vrf_collector:
+    build: ./backend
+    container_name: supervision_vrf_collector
+    restart: unless-stopped
+    command: python /app/collectors/vrf_collector.py
+    env_file: .env
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - supervision_net
+
 volumes:
   postgres_data:
     driver: local
