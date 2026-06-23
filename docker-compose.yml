@@ -146,10 +146,45 @@ services:
       timeout: 10s
       retries: 3
 
+        # Oxidized (backup des configurations réseaux)
+  oxidized:
+    image: oxidized/oxidized:latest
+    container_name: supervision_oxidized
+    restart: unless-stopped
+    environment:
+      - CONFIG_RELOAD_INTERVAL=600
+    volumes:
+      - ./config/oxidized:/root/.config/oxidized
+      - oxidized_data:/root/.config/oxidized/configs.git
+    ports:
+      - "8888:8888"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - supervision_net
+
+  # Syslog Collector
+  syslog:
+    build: ./backend
+    container_name: supervision_syslog
+    restart: unless-stopped
+    command: python /app/collectors/syslog_collector.py
+    env_file: .env
+    ports:
+      - "514:514/udp"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - supervision_net
+
 volumes:
   postgres_data:
     driver: local
   grafana_data:
+    driver: local
+      oxidized_data:
     driver: local
 
 networks:
