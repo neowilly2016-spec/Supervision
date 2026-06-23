@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Network Discovery Module - SNMPv2 Auto-Discovery
-Scans network ranges and classifies devices by role (PE/P/AGG/DIST)
+Scans network ranges and classifies devices by zone (Backbone/MBH) and role (PE/P/AGG/DIST)
 """
 
 import os
@@ -17,11 +17,12 @@ from psycopg2.extras import RealDictCursor
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 class NetworkDiscovery:
     def __init__(self, db_config, config_file='config/devices.yaml'):
         self.db_config = db_config
         self.config = self.load_config(config_file)
-        
+    
     def load_config(self, config_file):
         """Load configuration from devices.yaml"""
         try:
@@ -34,12 +35,14 @@ class NetworkDiscovery:
     def discover_device(self, ip, community):
         """
         Discover device via SNMPv2 and extract basic info
+        Returns: dict with hostname, sysDescr, vendor, model
         """
         try:
+            # SNMPv2 GET for sysDescr, sysName
             iterator = getCmd(
                 SnmpEngine(),
                 CommunityData(community, mpModel=1),  # SNMPv2c
-                UdpTransportTarget((ip, 161), timeout=2, retries=1),
+                UdpTransportTarget((ip, 161), timeout=5.0, retries=2),
                 ContextData(),
                 ObjectType(ObjectIdentity('SNMPv2-MIB', 'sysDescr', 0)),
                 ObjectType(ObjectIdentity('SNMPv2-MIB', 'sysName', 0))
@@ -51,56 +54,114 @@ class NetworkDiscovery:
                 return None
             
             sys_descr = str(varBinds[0][1])
-            sys_name = str(varBinds[1][1])
+            hostname = str(varBinds[1][1])
             
-            # Classify device
-            vendor, model = self.identify_vendor_model(sys_descr)
-            role = self.classify_role(sys_descr, ip)
+            # Extract vendor from sysDescr
+            vendor = self._extract_vendor(sys_descr)
+            model = self._extract_model(sys_descr)
             
-            if vendor and model and role:
-                device_info = {
-                    'ip': ip,
-                    'hostname': sys_name,
-                    'sys_descr': sys_descr,
-                    'vendor': vendor,
-                    'model': model,
-                    'role': role,
-                    'snmp_version': '2c',
-                    'community': community
-                }
-                
-                logger.info(f"Discovered: {sys_name} ({ip}) - {vendor} {model} [Role: {role}]")
-                return device_info
-            
-            return None
-            
+            return {
+                'ip': ip,
+                'hostname': hostname,
+                'sys_descr': sys_descr,
+                'vendor': vendor,
+                'model': model
+            }
+        
         except Exception as e:
+            logger.debug(f"Failed to discover {ip}: {e}")
             return None
     
-    def identify_vendor_model(self, sys_descr):
-        """
-        Identify vendor and model from sysDescr using patterns from config
-        """
+    def _extract_vendor(self, sys_descr):
+        """Extract vendor from sysDescr"""
         sys_descr_lower = sys_descr.lower()
-        vendor_detection = self.config.get('vendor_detection', {})
         
-        for vendor, vendor_config in vendor_detection.items():
-            # Check vendor pattern
-            for pattern_entry in vendor_config.get('patterns', []):
-                pattern = pattern_entry.get('sysDescr', '')
-                if re.search(pattern, sys_descr_lower):
-                    # Find model
-                    models = vendor_config.get('models', {})
-                    for model_name, model_pattern in models.items():
-                        if re.search(model_pattern, sys_descr_lower):
-                            return vendor, model_name
-                    return vendor, 'Unknown'
-        
-        return None, None
+        if 'juniper' in sys_descr_lower or 'junos' in sys_descr_lower:
+            return 'Juniper'
+        elif 'huawei' in sys_descr_lower:
+            return 'Huawei'
+        else:
+            return 'Unknown'
     
-    def classify_role(self, sys_descr, ip):
+    def _extract_model(self, sys_descr):
+        """Extract model from sysDescr"""
+        # Match common patterns
+        patterns = [
+            r'(MX\d+)',      # Juniper MX series
+            r'(NE\d+[A-Z]*)', # Huawei NE series
+            r'(ACX\d+)',      # Juniper ACX
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, sys_descr, re.IGNORECASE)
+            if match:
+                return match.group(1).upper()
+        
+        return 'Unknown'
+    
+    def classify_zone(self, hostname, sys_descr, ip, model):
         """
-        Classify device role (PE/P/AGG/DIST) based on sysDescr patterns
+        Classify device zone (backbone or mbh) based on zone_classification patterns
+        Returns: 'backbone', 'mbh', or 'unknown'
+        """
+        zone_classification = self.config.get('zone_classification', {})
+        
+        # Check Backbone classification
+        backbone_config = zone_classification.get('backbone', {})
+        if self._matches_zone_patterns(hostname, sys_descr, ip, model, backbone_config):
+            return 'backbone'
+        
+        # Check MBH classification
+        mbh_config = zone_classification.get('mbh', {})
+        if self._matches_zone_patterns(hostname, sys_descr, ip, model, mbh_config):
+            return 'mbh'
+        
+        return 'unknown'
+    
+    def _matches_zone_patterns(self, hostname, sys_descr, ip, model, zone_config):
+        """
+        Check if device matches zone classification patterns
+        """
+        # Check hostname patterns
+        hostname_patterns = zone_config.get('hostname_patterns', [])
+        for pattern in hostname_patterns:
+            if re.search(pattern, hostname, re.IGNORECASE):
+                return True
+        
+        # Check sysDescr patterns
+        sysdescr_patterns = zone_config.get('sysDescr_patterns', [])
+        for pattern in sysdescr_patterns:
+            if re.search(pattern, sys_descr, re.IGNORECASE):
+                return True
+        
+        # Check IP ranges
+        ip_ranges = zone_config.get('ip_ranges', [])
+        for ip_range in ip_ranges:
+            if ipaddress.ip_address(ip) in ipaddress.ip_network(ip_range):
+                return True
+        
+        # Check conditional IP classification (for 10.42.0.0/16)
+        ip_conditional = zone_config.get('ip_conditional', {})
+        if ip_conditional:
+            cond_range = ip_conditional.get('range')
+            if cond_range and ipaddress.ip_address(ip) in ipaddress.ip_network(cond_range):
+                include_models = ip_conditional.get('include_models', [])
+                exclude_models = ip_conditional.get('exclude_models', [])
+                
+                # Check if model matches include list
+                for inc_model in include_models:
+                    if inc_model.upper() in model.upper():
+                        # Make sure it's not in exclude list
+                        for exc_model in exclude_models:
+                            if exc_model.upper() in model.upper():
+                                return False
+                        return True
+        
+        return False
+    
+    def classify_role(self, sys_descr, ip, hostname):
+        """
+        Classify device role (PE/P/AGG/DIST) based on sysDescr and hostname patterns
         """
         sys_descr_lower = sys_descr.lower()
         role_classification = self.config.get('role_classification', {})
@@ -111,9 +172,17 @@ class NetworkDiscovery:
             patterns = role_config.get('patterns', [])
             
             for pattern_entry in patterns:
-                pattern = pattern_entry.get('sysDescr', '')
-                if re.search(pattern, sys_descr_lower):
-                    return role
+                # Check sysDescr pattern
+                if 'sysDescr' in pattern_entry:
+                    pattern = pattern_entry.get('sysDescr', '')
+                    if re.search(pattern, sys_descr_lower):
+                        return role
+                
+                # Check hostname pattern
+                if 'hostname' in pattern_entry:
+                    pattern = pattern_entry.get('hostname', '')
+                    if re.search(pattern, hostname, re.IGNORECASE):
+                        return role
         
         return 'Unknown'
     
@@ -126,84 +195,111 @@ class NetworkDiscovery:
         
         logger.info(f"Scanning {network_range}...")
         
-        workers = self.config.get('global', {}).get('discovery_workers', 20)
-        
-        with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        # Parallel scanning with thread pool
+        max_workers = self.config.get('global', {}).get('discovery_workers', 20)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = {
-                executor.submit(self.discover_device, str(ip), community): ip
+                executor.submit(self.discover_device, str(ip), community): str(ip) 
                 for ip in network.hosts()
             }
             
             for future in concurrent.futures.as_completed(futures):
                 device = future.result()
                 if device:
-                    discovered_devices.append(device)
-        
-        logger.info(f"Scan complete for {network_range}: found {len(discovered_devices)} devices")
-        return discovered_devices
-    
-    def save_to_database(self, devices):
-        """
-        Save discovered devices to TimescaleDB
-        """
-        try:
-            conn = psycopg2.connect(**self.db_config)
-            cur = conn.cursor()
-            
-            for device in devices:
-                cur.execute(
-                    """
-                    INSERT INTO devices (
-                        hostname, ip_address, vendor, model, role,
-                        snmp_community, snmp_version, sys_descr, discovered_at
+                    # Classify zone and role
+                    zone = self.classify_zone(
+                        device['hostname'], 
+                        device['sys_descr'], 
+                        device['ip'],
+                        device['model']
                     )
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW())
-                    ON CONFLICT (ip_address) 
-                    DO UPDATE SET 
-                        hostname = EXCLUDED.hostname,
-                        vendor = EXCLUDED.vendor,
-                        model = EXCLUDED.model,
-                        role = EXCLUDED.role,
-                        sys_descr = EXCLUDED.sys_descr,
-                        discovered_at = NOW()
-                    """,
-                    (device['hostname'], device['ip'], device['vendor'],
-                     device['model'], device['role'], device['community'],
-                     device['snmp_version'], device['sys_descr'])
-                )
-            
-            conn.commit()
-            cur.close()
-            conn.close()
-            logger.info(f"Saved {len(devices)} devices to database")
-        except Exception as e:
-            logger.error(f"Error saving to database: {e}")
+                    role = self.classify_role(
+                        device['sys_descr'], 
+                        device['ip'],
+                        device['hostname']
+                    )
+                    
+                    device['zone'] = zone
+                    device['role'] = role
+                    discovered_devices.append(device)
+                    
+                    logger.info(f"Discovered: {device['hostname']} ({device['ip']}) - Zone: {zone}, Role: {role}")
+        
+        return discovered_devices
     
     def run_discovery(self):
         """
-        Run discovery on all configured network ranges
+        Main discovery routine - scan all configured network ranges
         """
-        all_devices = []
-        
+        global_config = self.config.get('global', {})
+        community = global_config.get('snmp_community', 'public')
         network_ranges = self.config.get('network_ranges', [])
-        community = self.config.get('global', {}).get('snmp_community', 'public')
+        
+        all_devices = []
         
         for network_range in network_ranges:
             devices = self.scan_network(network_range, community)
             all_devices.extend(devices)
         
+        # Save to database
         if all_devices:
             self.save_to_database(all_devices)
         
-        # Group by role for summary
+        # Group by role and zone for summary
         by_role = {}
+        by_zone = {}
         for device in all_devices:
             role = device['role']
+            zone = device['zone']
+            
             if role not in by_role:
                 by_role[role] = []
             by_role[role].append(device)
+            
+            if zone not in by_zone:
+                by_zone[zone] = []
+            by_zone[zone].append(device)
         
-        return all_devices, by_role
+        return all_devices, by_role, by_zone
+    
+    def save_to_database(self, devices):
+        """
+        Save discovered devices to PostgreSQL database
+        """
+        try:
+            conn = psycopg2.connect(**self.db_config)
+            cursor = conn.cursor()
+            
+            for device in devices:
+                cursor.execute("""
+                    INSERT INTO devices (hostname, ip, vendor, model, sys_descr, zone, role, last_seen)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, NOW())
+                    ON CONFLICT (ip) DO UPDATE SET
+                        hostname = EXCLUDED.hostname,
+                        vendor = EXCLUDED.vendor,
+                        model = EXCLUDED.model,
+                        sys_descr = EXCLUDED.sys_descr,
+                        zone = EXCLUDED.zone,
+                        role = EXCLUDED.role,
+                        last_seen = NOW()
+                """, (
+                    device['hostname'],
+                    device['ip'],
+                    device['vendor'],
+                    device['model'],
+                    device['sys_descr'],
+                    device['zone'],
+                    device['role']
+                ))
+            
+            conn.commit()
+            cursor.close()
+            conn.close()
+            logger.info(f"Saved {len(devices)} devices to database")
+        
+        except Exception as e:
+            logger.error(f"Database error: {e}")
+
 
 if __name__ == '__main__':
     # Database configuration
@@ -216,15 +312,24 @@ if __name__ == '__main__':
     }
     
     discovery = NetworkDiscovery(db_config)
-    devices, by_role = discovery.run_discovery()
+    devices, by_role, by_zone = discovery.run_discovery()
     
     print(f"\n{'='*80}")
     print(f"Discovery complete: {len(devices)} devices found")
     print(f"{'='*80}\n")
     
+    # Summary by zone
+    print("Summary by Zone:")
+    for zone, zone_devices in sorted(by_zone.items()):
+        print(f"  {zone}: {len(zone_devices)} devices")
+        for device in zone_devices:
+            print(f"    - {device['hostname']} ({device['ip']}) [{device['role']}]")
+    
+    print("\n" + "="*80 + "\n")
+    
     # Summary by role
+    print("Summary by Role:")
     for role, role_devices in sorted(by_role.items()):
-        print(f"\n[{role}] - {len(role_devices)} devices:")
-        print(f"{'-'*80}")
+        print(f"  {role}: {len(role_devices)} devices")
         for device in role_devices:
-            print(f"  {device['hostname']:<30} {device['ip']:<15} {device['vendor']:<10} {device['model']:<10}")
+            print(f"    - {device['hostname']} ({device['ip']}) [{device['zone']}]")
