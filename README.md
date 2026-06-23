@@ -7,8 +7,7 @@
 Solution complète de monitoring réseau optimisée pour superviser:
 - **Backbone**: Juniper MX960 (BGP, ISIS, MPLS, LDP, RSVP, Segment Routing)
 - **MBH Zone 1 (Juniper)**: MX480, MX204, MX104 avec ISIS/MPLS
-- **MBH Zone 2 (Huawei)**: NE9000, NE5000E avec ISIS/MPLS
-- **Topologie**: Découverte automatique via LLDP/CDP
+- **MBH Zone 2 (Huawei)**: NetEngine 8000 M14, ATN910D-A, ATN950C, ATN950D, CX600-X16A, CX600-X2-M8A, CX600-X3, CX600-X3A, CX600-X8A avec ISIS/MPLS **Topologie**: Découverte automatique via LLDP/CDP
 - **Télémétrie**: gRPC streaming + SNMPv2
 - **Intelligence**: Détection anomalies ML pour BGP/ISIS
 
