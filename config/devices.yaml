@@ -1,9 +1,10 @@
 # ===========================================================
 # Configuration SNMP Auto-Discovery
-# Scan automatique des plages reseau - Classification par role
+# Scan automatique des plages reseau - Classification Backbone/MBH
 # ===========================================================
 
 global:
+  
   # Parametres SNMP
   snmp_version: 2c
   snmp_community: "{{ SNMP_DEFAULT_COMMUNITY }}"
@@ -28,14 +29,200 @@ global:
 # Plages reseau a scanner
 # ===========================================================
 network_ranges:
-  - 10.200.0.0/16
-  - 10.40.0.0/16
-  - 10.42.0.0/16
-  - 10.44.0.0/16
+  # Backbone ranges
+  - 10.200.240.0/24  # Juniper SR01/SR02
+  - 10.200.241.0/24  # Juniper SR01/SR02
+  - 10.40.0.0/16     # NE9000/NE40E Backbone
+  
+  # MBH ranges
+  - 10.200.1.0/24    # MBH RAN sites
+  - 10.200.2.0/24
+  - 10.200.3.0/24
+  - 10.200.4.0/24
+  - 10.200.5.0/24
+  - 10.200.6.0/24
+  - 10.200.7.0/24
+  - 10.200.8.0/24
+  - 10.200.9.0/24
+  - 10.200.10.0/24
+  - 10.200.11.0/24
+  - 10.200.12.0/24
+  - 10.200.13.0/24
+  - 10.200.14.0/24
+  - 10.200.15.0/24
+  - 10.200.16.0/24
+  - 10.200.17.0/24
+  - 10.200.18.0/24
+  - 10.200.19.0/24
+  - 10.200.20.0/24
+  - 10.200.21.0/24
+  - 10.200.22.0/24
+  - 10.200.23.0/24
+  - 10.200.24.0/24
+  - 10.200.25.0/24
+  - 10.200.26.0/24
+  - 10.200.27.0/24
+  - 10.200.28.0/24
+  - 10.200.29.0/24
+  - 10.200.30.0/24
+  - 10.200.31.0/24
+  - 10.200.32.0/24
+  - 10.200.33.0/24
+  - 10.200.34.0/24
+  - 10.200.35.0/24
+  - 10.200.36.0/24
+  - 10.200.37.0/24
+  - 10.200.38.0/24
+  - 10.200.39.0/24
+  - 10.200.40.0/24
+  - 10.200.41.0/24
+  - 10.200.42.0/24
+  - 10.200.43.0/24
+  - 10.200.44.0/24
+  - 10.200.45.0/24
+  - 10.200.46.0/24
+  - 10.44.0.0/16     # NE8000 MBH
+  
+  # Mixed range (classification by hostname/model)
+  - 10.42.0.0/16     # NE9000/NE40E=Backbone; ASG/ASBR/NE8000=MBH
 
 # ===========================================================
-# Classification automatique par role
-# Base sur sysDescr et autres attributs SNMP
+# Classification automatique Backbone vs MBH
+# Base sur hostname, sysDescr, et plages IP
+# ===========================================================
+zone_classification:
+  
+  backbone:
+    description: "Reseau Backbone - Juniper MX960 et Huawei NE9000/NE40E"
+    
+    # Patterns hostname pour Backbone
+    hostname_patterns:
+      - ".*SR01$"           # Juniper spine routers
+      - ".*SR02$"
+      - "(?!.*RAN_).*SR01"  # SR01/SR02 sans prefix RAN_
+      - "(?!.*RAN_).*SR02"
+    
+    # Patterns sysDescr pour Backbone
+    sysDescr_patterns:
+      - ".*MX960.*"
+      - ".*NE9000.*"        # Huawei NE9000
+      - ".*NE40E.*"         # Huawei NE40E
+    
+    # Plages IP Backbone
+    ip_ranges:
+      - "10.200.240.0/24"
+      - "10.200.241.0/24"
+      - "10.40.0.0/16"
+    
+    # Classification IP 10.42 par modele
+    ip_conditional:
+      range: "10.42.0.0/16"
+      include_models:
+        - "NE9000"
+        - "NE40E"
+      exclude_models:
+        - "NE8000"
+        - "ASG"
+        - "ASBR"
+    
+    # Attributs techniques Backbone
+    attributes:
+      has_bgp: true
+      has_mpls: true
+      has_isis: true
+      role_priority:
+        - "PE"    # Provider Edge
+        - "P"     # Core
+  
+  mbh:
+    description: "Mobile Backhaul - Huawei NE8000 et sites RAN"
+    
+    # Patterns hostname pour MBH
+    hostname_patterns:
+      - "RAN_.*"           # Tous les sites RAN
+      - ".*ASG.*"          # Aggregation Service Gateway
+      - ".*ASBR.*"         # AS Border Router
+    
+    # Patterns sysDescr pour MBH
+    sysDescr_patterns:
+      - ".*NE8000.*"       # Huawei NE8000 = MBH
+      - ".*NE5000.*"
+      - ".*MX480.*"
+      - ".*MX204.*"
+      - ".*MX104.*"
+    
+    # Plages IP MBH
+    ip_ranges:
+      - "10.200.1.0/24"
+      - "10.200.2.0/24"
+      - "10.200.3.0/24"
+      - "10.200.4.0/24"
+      - "10.200.5.0/24"
+      - "10.200.6.0/24"
+      - "10.200.7.0/24"
+      - "10.200.8.0/24"
+      - "10.200.9.0/24"
+      - "10.200.10.0/24"
+      - "10.200.11.0/24"
+      - "10.200.12.0/24"
+      - "10.200.13.0/24"
+      - "10.200.14.0/24"
+      - "10.200.15.0/24"
+      - "10.200.16.0/24"
+      - "10.200.17.0/24"
+      - "10.200.18.0/24"
+      - "10.200.19.0/24"
+      - "10.200.20.0/24"
+      - "10.200.21.0/24"
+      - "10.200.22.0/24"
+      - "10.200.23.0/24"
+      - "10.200.24.0/24"
+      - "10.200.25.0/24"
+      - "10.200.26.0/24"
+      - "10.200.27.0/24"
+      - "10.200.28.0/24"
+      - "10.200.29.0/24"
+      - "10.200.30.0/24"
+      - "10.200.31.0/24"
+      - "10.200.32.0/24"
+      - "10.200.33.0/24"
+      - "10.200.34.0/24"
+      - "10.200.35.0/24"
+      - "10.200.36.0/24"
+      - "10.200.37.0/24"
+      - "10.200.38.0/24"
+      - "10.200.39.0/24"
+      - "10.200.40.0/24"
+      - "10.200.41.0/24"
+      - "10.200.42.0/24"
+      - "10.200.43.0/24"
+      - "10.200.44.0/24"
+      - "10.200.45.0/24"
+      - "10.200.46.0/24"
+      - "10.44.0.0/16"
+    
+    # Classification IP 10.42 par modele
+    ip_conditional:
+      range: "10.42.0.0/16"
+      include_models:
+        - "NE8000"
+        - "ASG"
+        - "ASBR"
+      exclude_models:
+        - "NE9000"
+        - "NE40E"
+    
+    # Attributs techniques MBH
+    attributes:
+      has_mpls: true
+      has_isis: true
+      role_priority:
+        - "AGG"   # Aggregation
+        - "DIST"  # Distribution
+
+# ===========================================================
+# Role-based classification (PE/P/AGG/DIST)
+# Applique apres zone_classification
 # ===========================================================
 role_classification:
   
@@ -43,11 +230,14 @@ role_classification:
   PE:
     patterns:
       - sysDescr: ".*mx960.*"
-      - sysDescr: ".*ne9000.*backbone.*"
+      - sysDescr: ".*ne9000.*"
+      - sysDescr: ".*ne40e.*"
+      - hostname: ".*SR01$"
+      - hostname: ".*SR02$"
     attributes:
       - has_bgp: true
       - has_mpls: true
-      - loopback_prefix: "10.200.0"
+      - zone: "backbone"
   
   # Core (P) - Routeurs coeur MPLS uniquement
   P:
@@ -57,71 +247,27 @@ role_classification:
     attributes:
       - has_mpls: true
       - has_bgp: false
+      - zone: "backbone"
   
   # Aggregation (AGG) - Routeurs d'agregation MBH
   AGG:
     patterns:
       - sysDescr: ".*mx480.*"
       - sysDescr: ".*mx204.*"
-      - sysDescr: ".*ne9000.*agg.*"
+      - sysDescr: ".*ne8000.*"
       - sysDescr: ".*ne5000.*"
+      - hostname: ".*ASG.*"
+      - hostname: ".*ASBR.*"
     attributes:
       - has_isis: true
       - has_mpls: true
+      - zone: "mbh"
   
   # Distribution (DIST) - Routeurs de distribution
   DIST:
     patterns:
       - sysDescr: ".*mx104.*"
       - sysDescr: ".*ne.*dist.*"
+      - hostname: "RAN_.*"
     attributes:
-      - has_isis: true
-
-# ===========================================================
-# Detection automatique vendor et model
-# ===========================================================
-vendor_detection:
-  juniper:
-    patterns:
-      - sysDescr: ".*juniper.*"
-    models:
-      MX960: ".*mx960.*"
-      MX480: ".*mx480.*"
-      MX204: ".*mx204.*"
-      MX104: ".*mx104.*"
-  
-  huawei:
-    patterns:
-      - sysDescr: ".*huawei.*"
-    models:
-      NE9000: ".*ne9000.*"
-      NE5000E: ".*ne5000e.*"
-      NE5000: ".*ne5000[^e].*"
-
-# ===========================================================
-# Configuration gRPC (optionnel)
-# ===========================================================
-grpc:
-  enabled: true
-  auto_configure: true
-  juniper_port: 32767
-  huawei_port: 57400
-  subscription_interval: 10
-
-# ===========================================================
-# Optimisations
-# ===========================================================
-optimizations:
-  redis_cache:
-    enabled: true
-    ttl_default: 300
-  
-  timescaledb_compression:
-    enabled: true
-    compression_after_days: 7
-  
-  ml_anomaly_detection:
-    enabled: true
-    models:
-      - bgp_flap_detection
-      - isis_spf_anomaly
+      - zone: "mbh"
