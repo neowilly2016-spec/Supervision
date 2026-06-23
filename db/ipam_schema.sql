@@ -6,14 +6,17 @@
 -- ============ VRFs (Virtual Routing and Forwarding) ============
 CREATE TABLE IF NOT EXISTS vrfs (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL UNIQUE,
+    name VARCHAR(100) NOT NULL
+    device_id INTEGER REFERENCES devices(id) ON DELETE CASCADE,
     rd VARCHAR(50),  -- Route Distinguisher (ex: 65000:100)
     description TEXT,
     import_targets TEXT[],  -- RT import ["65000:100", "65000:200"]
     export_targets TEXT[],  -- RT export ["65000:100"]
     enforce_unique BOOLEAN DEFAULT true,  -- Enforce unique IPs across this VRF
+    last_seen TIMESTAMPTZ DEFAULT NOW(),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
+    UNIQUE(device_id, name)
 );
 
 CREATE INDEX idx_vrfs_name ON vrfs(name);
