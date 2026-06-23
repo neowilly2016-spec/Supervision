@@ -1,0 +1,45 @@
+# Grafana Datasource Provisioning for TimescaleDB
+# Auto-configured PostgreSQL/TimescaleDB connection
+
+apiVersion: 1
+
+datasources:
+  # TimescaleDB - Main network monitoring database
+  - name: TimescaleDB
+    type: postgres
+    access: proxy
+    url: db:5432
+    database: ${POSTGRES_DB}
+    user: ${POSTGRES_USER}
+    isDefault: true
+    jsonData:
+      sslmode: 'disable'
+      postgresVersion: 1500  # PostgreSQL 15
+      timescaledb: true
+      maxOpenConns: 100
+      maxIdleConns: 100
+      connMaxLifetime: 14400  # 4 hours
+    secureJsonData:
+      password: ${POSTGRES_PASSWORD}
+    editable: false
+    version: 1
+
+  # TimescaleDB - Read replica (optional pour scaling)
+  - name: TimescaleDB-ReadOnly
+    type: postgres
+    access: proxy
+    url: db:5432
+    database: ${POSTGRES_DB}
+    user: ${POSTGRES_USER}
+    isDefault: false
+    jsonData:
+      sslmode: 'disable'
+      postgresVersion: 1500
+      timescaledb: true
+      maxOpenConns: 50
+      maxIdleConns: 25
+      connMaxLifetime: 14400
+    secureJsonData:
+      password: ${POSTGRES_PASSWORD}
+    editable: false
+    version: 1
