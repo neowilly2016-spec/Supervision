@@ -7,8 +7,9 @@ global:
   
   # Parametres SNMP
   snmp_version: 2c
-  snmp_community: "{{ SNMP_DEFAULT_COMMUNITY }}"
-  snmp_timeout: 5
+  # SNMP communities - Backbone et MBH separees
+  snmp_community_backbone: "{{ SNMP_BACKBONE_COMMUNITY }}"
+  snmp_community_mbh: "{{ SNMP_MBH_COMMUNITY }}}"
   snmp_retries: 2
   
   # Discovery settings
@@ -98,6 +99,10 @@ network_ranges:
 # Base sur hostname, sysDescr, IP et modele
 # ===========================================================
 zone_classification:
+  # NOTE: Le systeme utilise automatiquement:
+  # - snmp_community_backbone pour les equipements Backbone
+  # - snmp_community_mbh pour les equipements MBH
+  # La classification se fait selon les regles ci-dessous
   
   backbone:
     description: "Reseau Backbone - Juniper MX960 et Huawei NE9000/NE40E"
